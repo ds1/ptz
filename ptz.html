@@ -181,42 +181,45 @@
             font-weight: bold;
         }
         
-        /* Help panel */
+        /* Help panel - fixed width */
         .help-panel {
             position: absolute;
             top: 70px;
             left: 20px;
             background-color: var(--overlay-bg);
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
             font-size: 14px;
+            line-height: 1.5;
             z-index: 100;
             display: none;
-            max-width: 350px;
-            width: calc(100% - 40px);
-        }
-        
-        .help-panel.visible {
-            display: block;
+            width: 300px; /* Fixed width for better readability */
+            max-width: 90vw; /* Responsive for small screens */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
         
         .help-panel h3 {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             color: var(--accent-color);
+            font-size: 16px;
         }
         
         .help-panel p {
             margin-bottom: 15px;
-            line-height: 1.4;
+            line-height: 1.5;
+            word-wrap: break-word;
         }
         
         .help-panel ul {
             list-style-type: none;
             margin-bottom: 15px;
+            padding-left: 5px;
         }
         
         .help-panel li {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
         }
         
         .help-panel .key {
@@ -224,8 +227,10 @@
             background-color: var(--secondary-bg);
             padding: 2px 6px;
             border-radius: 4px;
-            margin-right: 5px;
+            margin-right: 8px;
             font-family: monospace;
+            min-width: 20px;
+            text-align: center;
         }
         
         /* Source selector modal */
