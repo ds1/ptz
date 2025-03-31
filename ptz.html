@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTZ Camera Controller</title>
+    <style>
+        /* Base styles and variables */
+        :root {
+            --primary-bg: #121212;
+            --secondary-bg: #1e1e1e;
+            --primary-text: #e0e0e0;
+            --secondary-text: #a0a0a0;
+            --accent-color: #00b3ff;
+            --control-bg: rgba(40, 40, 40, 0.7);
+            --overlay-bg: rgba(0, 0, 0, 0.5);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--primary-text);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        
+        /* Main video container */
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+        }
+        
+        /* Video stream elements */
+        .video-stream {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 1;
+        }
+        
+        #placeholder-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        #video-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+        
+        /* Control panels and overlays */
+        .top-left-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .bottom-right-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        
+        /* Common control panel styling */
+        .control-panel {
+            background-color: var(--overlay-bg);
+            border-radius: 8px;
+            padding: 15px;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+            z-index: 999;
+        }
+        
+        .control-panel:hover {
+            opacity: 1;
+        }
+        
+        /* Unified camera control panel */
+        .camera-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .control-label {
+            color: var(--secondary-text);
+            width: 40px;
+            text-align: right;
+        }
+        
+        .control-value {
+            background-color: var(--control-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 4px 8px;
+            min-width: 60px;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        .control-value:hover {
+            background-color: rgba(50, 50, 50, 0.7);
+        }
+        
+        .control-value.editing {
+            background-color: var(--secondary-bg);
+            color: var(--primary-text);
+            outline: 2px solid var(--accent-color);
+        }
+        
+        .zoom-buttons {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .zoom-button {
+            width: 30px;
+            height: 30px;
+            background-color: var(--control-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-text);
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .zoom-button:hover {
+            background-color: var(--accent-color);
+        }
+        
+        /* Help and source buttons */
+        .icon-button {
+            width: 40px;
+            height: 40px;
+            background-color: var(--overlay-bg);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+            z-index: 100;
+        }
+        
+        .icon-button:hover {
+            opacity: 1;
+        }
+        
+        .icon-button span {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        /* Help panel */
+        .help-panel {
+            position: absolute;
+            top: 70px;
+            left: 20px;
+            background-color: var(--overlay-bg);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 100;
+            display: none;
+            max-width: 350px;
+            width: calc(100% - 40px);
+        }
+        
+        .help-panel.visible {
+            display: block;
+        }
+        
+        .help-panel h3 {
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+        
+        .help-panel p {
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        
+        .help-panel ul {
+            list-style-type: none;
+            margin-bottom: 15px;
+        }
+        
+        .help-panel li {
+            margin-bottom: 5px;
+        }
+        
+        .help-panel .key {
+            display: inline-block;
+            background-color: var(--secondary-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 5px;
+            font-family: monospace;
+        }
+        
+        /* Source selector modal */
+        .source-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .modal-content {
+            background-color: var(--secondary-bg);
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+        }
+        
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: var(--accent-color);
+            font-size: 20px;
+        }
+        
+        .source-options {
+            margin-bottom: 20px;
+        }
+        
+        .source-option {
+            margin-bottom: 12px;
+        }
+        
+        .source-option label {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background-color: var(--control-bg);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .source-option label:hover {
+            background-color: rgba(50, 50, 50, 0.7);
+        }
+        
+        .source-option input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .modal-button {
+            background-color: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .modal-button:hover {
+            background-color: #00c3ff;
+        }
+        
+        /* Camera icon for source button */
+        .camera-icon {
+            width: 20px;
+            height: 20px;
+            fill: var(--primary-text);
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <!-- Video stream elements -->
+        <div class="video-stream">
+            <img src="/api/placeholder/1920/1080" alt="Live Camera Feed" id="placeholder-image">
+            <video id="video-feed" autoplay muted></video>
+        </div>
+        
+        <!-- Top-left controls: Help and source buttons -->
+        <div class="top-left-controls">
+            <div class="icon-button" id="help-button" title="Show controls guide">
+                <span>?</span>
+            </div>
+            <div class="icon-button" id="source-button" style="display: none;" title="Change video source">
+                <svg class="camera-icon" viewBox="0 0 24 24">
+                    <path d="M9 3L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-3.17L15 3H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+                    <path d="M12 17c1.65 0 3-1.35 3-3s-1.35-3-3-3-3 1.35-3 3 1.35 3 3 3z"/>
+                </svg>
+            </div>
+            
+            <!-- Help panel with all instructions -->
+            <div class="help-panel" id="help-panel">
+                <h3>PTZ Camera Controls</h3>
+                
+                <p><strong>Mouse Controls:</strong><br>
+                Left-click and drag to pan and tilt the camera.<br>
+                Use the scroll wheel to zoom in and out.</p>
+                
+                <p><strong>Direct Value Entry:</strong><br>
+                Click on any value (Pan, Tilt, Zoom) to type in an exact value.</p>
+                
+                <h3>Keyboard Shortcuts</h3>
+                <ul>
+                    <li><span class="key">W</span> Tilt up</li>
+                    <li><span class="key">A</span> Pan left</li>
+                    <li><span class="key">S</span> Tilt down</li>
+                    <li><span class="key">D</span> Pan right</li>
+                    <li><span class="key">+</span> Zoom in</li>
+                    <li><span class="key">-</span> Zoom out</li>
+                    <li><span class="key">R</span> Reset camera position</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Bottom-right controls: Unified camera control panel -->
+        <div class="bottom-right-controls">
+            <div class="control-panel">
+                <div class="camera-controls">
+                    <div class="control-row">
+                        <span class="control-label">Pan:</span>
+                        <span class="control-value" id="pan-value" data-value="0.0" tabindex="0">0.0°</span>
+                    </div>
+                    
+                    <div class="control-row">
+                        <span class="control-label">Tilt:</span>
+                        <span class="control-value" id="tilt-value" data-value="0.0" tabindex="0">0.0°</span>
+                    </div>
+                    
+                    <div class="control-row">
+                        <span class="control-label">Zoom:</span>
+                        <span class="control-value" id="zoom-value" data-value="1.0" tabindex="0">1.0x</span>
+                        <div class="zoom-buttons">
+                            <div class="zoom-button" id="zoom-out" title="Zoom out">−</div>
+                            <div class="zoom-button" id="zoom-in" title="Zoom in">+</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Source selector modal -->
+        <div class="source-modal" id="source-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Select Video Source</h2>
+                </div>
+                
+                <div class="source-options">
+                    <div class="source-option">
+                        <label>
+                            <input type="radio" name="video-source" value="placeholder" checked>
+                            Placeholder Image
+                        </label>
+                    </div>
+                    
+                    <div class="source-option">
+                        <label>
+                            <input type="radio" name="video-source" value="webcam">
+                            Webcam (if available)
+                        </label>
+                    </div>
+                    
+                    <div class="source-option">
+                        <label>
+                            <input type="radio" name="video-source" value="sample">
+                            Sample Video
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button class="modal-button" id="apply-source-button">
+                        Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript for PTZ control functionality -->
+    <script>
+        // PTZ state
+        const ptzState = {
+            pan: 0.0,      // Range: -180 to 180 degrees
+            tilt: 0.0,     // Range: -90 to 90 degrees
+            zoom: 1.0,     // Range: 1.0 to 12.0
+            // Last mouse position for calculating deltas
+            lastMouseX: 0,
+            lastMouseY: 0
+        };
+        
+        // Mouse state variables
+        let isLeftDragging = false;
+        // Currently editing value
+        let currentlyEditing = null;
+        
+        // Initialize when DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get all required DOM elements
+            const videoContainer = document.querySelector('.video-container');
+            const videoStream = document.querySelector('.video-stream');
+            const placeholderImage = document.getElementById('placeholder-image');
+            const videoFeed = document.getElementById('video-feed');
+            const sourceModal = document.getElementById('source-modal');
+            const applySourceButton = document.getElementById('apply-source-button');
+            const sourceButton = document.getElementById('source-button');
+            const zoomIn = document.getElementById('zoom-in');
+            const zoomOut = document.getElementById('zoom-out');
+            const helpButton = document.getElementById('help-button');
+            const helpPanel = document.getElementById('help-panel');
+            
+            // Value display elements
+            const panValueElement = document.getElementById('pan-value');
+            const tiltValueElement = document.getElementById('tilt-value');
+            const zoomValueElement = document.getElementById('zoom-value');
+            const valueElements = [panValueElement, tiltValueElement, zoomValueElement];
+            
+            // Initialize controls and event listeners
+            function initControls() {
+                updatePTZDisplay();
+                
+                // Mouse events for video container (pan/tilt)
+                videoContainer.addEventListener('mousedown', handleMouseDown);
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+                
+                // Prevent context menu on right-click
+                videoContainer.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    return false;
+                });
+                
+                // Touch events (basic implementation)
+                videoContainer.addEventListener('touchstart', handleTouchStart);
+                document.addEventListener('touchmove', handleTouchMove);
+                document.addEventListener('touchend', handleTouchEnd);
+                
+                // Zoom buttons
+                zoomIn.addEventListener('click', () => changeZoom(0.5));
+                zoomOut.addEventListener('click', () => changeZoom(-0.5));
+                
+                // Mouse wheel for zoom
+                videoContainer.addEventListener('wheel', handleMouseWheel);
+                
+                // Help button
+                helpButton.addEventListener('click', toggleHelpPanel);
+                
+                // Source button (to show modal again)
+                sourceButton.addEventListener('click', () => {
+                    sourceModal.style.display = 'flex';
+                });
+                
+                // Apply source button in modal
+                applySourceButton.addEventListener('click', () => {
+                    // Get selected source
+                    const selectedSource = document.querySelector('input[name="video-source"]:checked').value;
+                    changeVideoSource(selectedSource);
+                    sourceModal.style.display = 'none';
+                    sourceButton.style.display = 'flex';
+                });
+                
+                // Make values directly editable
+                valueElements.forEach(element => {
+                    element.addEventListener('click', startEditing);
+                    element.addEventListener('keydown', handleValueKeydown);
+                    element.addEventListener('blur', stopEditing);
+                });
+                
+                // Click outside to stop editing
+                document.addEventListener('click', (e) => {
+                    if (currentlyEditing && !e.target.classList.contains('editing')) {
+                        stopEditing({ target: currentlyEditing });
+                    }
+                });
+                
+                // Keyboard controls
+                document.addEventListener('keydown', handleKeyDown);
+                document.addEventListener('keyup', handleKeyUp);
+            }
+            
+            // Start editing a value
+            function startEditing(e) {
+                if (currentlyEditing) {
+                    stopEditing({ target: currentlyEditing });
+                }
+                
+                const element = e.target;
+                if (element.classList.contains('control-value')) {
+                    element.classList.add('editing');
+                    element.setAttribute('contentEditable', 'true');
+                    element.focus();
+                    
+                    // Select all text
+                    const range = document.createRange();
+                    range.selectNodeContents(element);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    
+                    currentlyEditing = element;
+                    e.stopPropagation();
+                }
+            }
+            
+            // Handle keydown on editable value
+            function handleValueKeydown(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    stopEditing({ target: e.target });
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelEditing({ target: e.target });
+                }
+            }
+            
+            // Stop editing and apply new value
+            function stopEditing(e) {
+                const element = e.target;
+                if (element.classList.contains('control-value')) {
+                    element.classList.remove('editing');
+                    element.setAttribute('contentEditable', 'false');
+                    
+                    // Parse the entered value
+                    let rawValue = element.textContent.trim();
+                    rawValue = rawValue.replace(/[^\d.-]/g, ''); // Remove non-numeric characters
+                    let numValue = parseFloat(rawValue);
+                    
+                    if (isNaN(numValue)) {
+                        // Revert to the original value if not a number
+                        updatePTZDisplay();
+                        currentlyEditing = null;
+                        return;
+                    }
+                    
+                    // Apply the new value with appropriate limits
+                    if (element.id === 'pan-value') {
+                        ptzState.pan = Math.max(-180, Math.min(180, numValue));
+                    } else if (element.id === 'tilt-value') {
+                        ptzState.tilt = Math.max(-90, Math.min(90, numValue));
+                    } else if (element.id === 'zoom-value') {
+                        ptzState.zoom = Math.max(1, Math.min(12, numValue));
+                    }
+                    
+                    // Update display and send command
+                    updatePTZDisplay();
+                    sendCameraCommand();
+                    
+                    currentlyEditing = null;
+                }
+            }
+            
+            // Cancel editing without applying
+            function cancelEditing(e) {
+                const element = e.target;
+                if (element.classList.contains('control-value')) {
+                    element.classList.remove('editing');
+                    element.setAttribute('contentEditable', 'false');
+                    updatePTZDisplay();
+                    currentlyEditing = null;
+                }
+            }
+            
+            // Update PTZ display values
+            function updatePTZDisplay() {
+                panValueElement.textContent = `${ptzState.pan.toFixed(1)}°`;
+                panValueElement.setAttribute('data-value', ptzState.pan.toFixed(1));
+                
+                tiltValueElement.textContent = `${ptzState.tilt.toFixed(1)}°`;
+                tiltValueElement.setAttribute('data-value', ptzState.tilt.toFixed(1));
+                
+                zoomValueElement.textContent = `${ptzState.zoom.toFixed(1)}x`;
+                zoomValueElement.setAttribute('data-value', ptzState.zoom.toFixed(1));
+            }
+            
+            // Change video source
+            function changeVideoSource(sourceType) {
+                // Hide both video elements initially
+                placeholderImage.style.display = 'none';
+                videoFeed.style.display = 'none';
+                
+                switch (sourceType) {
+                    case 'placeholder':
+                        // Show the placeholder image
+                        placeholderImage.style.display = 'block';
+                        break;
+                        
+                    case 'webcam':
+                        // Try to access the webcam
+                        navigator.mediaDevices.getUserMedia({ video: true })
+                            .then(stream => {
+                                videoFeed.srcObject = stream;
+                                videoFeed.style.display = 'block';
+                            })
+                            .catch(err => {
+                                console.error('Error accessing webcam:', err);
+                                alert('Could not access webcam. Please check permissions or try another video source.');
+                                document.querySelector('input[value="placeholder"]').checked = true;
+                                placeholderImage.style.display = 'block';
+                            });
+                        break;
+                        
+                    case 'sample':
+                        // Use a sample video
+                        videoFeed.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+                        videoFeed.style.display = 'block';
+                        break;
+                }
+            }
+            
+            // Toggle help panel
+            function toggleHelpPanel() {
+                helpPanel.classList.toggle('visible');
+            }
+            
+            // Mouse event handlers
+            function handleMouseDown(e) {
+                if (currentlyEditing) return; // Don't drag if editing a value
+                
+                e.preventDefault();
+                
+                // Store initial mouse position
+                ptzState.lastMouseX = e.clientX;
+                ptzState.lastMouseY = e.clientY;
+                
+                // Only use left mouse button for panning/tilting
+                if (e.button === 0) { // Left mouse button
+                    isLeftDragging = true;
+                }
+            }
+            
+            function handleMouseMove(e) {
+                if (!isLeftDragging) return;
+                
+                // Calculate mouse movement deltas
+                const deltaX = e.clientX - ptzState.lastMouseX;
+                const deltaY = e.clientY - ptzState.lastMouseY;
+                
+                // Calculate movement speed based on screen size
+                const screenSize = Math.min(window.innerWidth, window.innerHeight);
+                const panFactor = 180 / screenSize; // Full screen drag = 180 degrees
+                const tiltFactor = 90 / screenSize; // Full screen drag = 90 degrees
+                
+                // Left-click drag for pan/tilt
+                // Pan is inverted for natural feeling (dragging right = camera pans left)
+                const panDelta = -deltaX * panFactor;
+                const tiltDelta = deltaY * tiltFactor;
+                
+                // Update pan/tilt values with limits
+                ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan + panDelta));
+                ptzState.tilt = Math.max(-90, Math.min(90, ptzState.tilt + tiltDelta));
+                
+                // Update last mouse position
+                ptzState.lastMouseX = e.clientX;
+                ptzState.lastMouseY = e.clientY;
+                
+                // Update display
+                updatePTZDisplay();
+                
+                // Send camera command
+                sendCameraCommand();
+            }
+            
+            function handleMouseUp(e) {
+                if (e.button === 0) {
+                    isLeftDragging = false;
+                }
+            }
+            
+            // Mouse wheel handler for zoom
+            function handleMouseWheel(e) {
+                if (currentlyEditing) return; // Don't zoom if editing a value
+                
+                e.preventDefault();
+                
+                // Determine scroll direction
+                const delta = e.deltaY < 0 ? 0.5 : -0.5;
+                changeZoom(delta);
+            }
+            
+            // Touch event handlers (basic implementation)
+            function handleTouchStart(e) {
+                if (currentlyEditing) return; // Don't handle touch if editing
+                
+                e.preventDefault();
+                
+                if (e.touches.length === 1) {
+                    // Single touch for pan/tilt
+                    isLeftDragging = true;
+                    ptzState.lastMouseX = e.touches[0].clientX;
+                    ptzState.lastMouseY = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    // Two finger touch for zoom (pinch)
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    ptzState.lastTouchDistance = Math.hypot(
+                        touch2.clientX - touch1.clientX,
+                        touch2.clientY - touch1.clientY
+                    );
+                }
+            }
+            
+            function handleTouchMove(e) {
+                if (currentlyEditing) return; // Don't handle touch if editing
+                
+                e.preventDefault();
+                
+                if (isLeftDragging && e.touches.length === 1) {
+                    // Single touch pan/tilt
+                    const deltaX = e.touches[0].clientX - ptzState.lastMouseX;
+                    const deltaY = e.touches[0].clientY - ptzState.lastMouseY;
+                    
+                    // Calculate movement speed based on screen size
+                    const screenSize = Math.min(window.innerWidth, window.innerHeight);
+                    const panFactor = 180 / screenSize; // Full screen drag = 180 degrees
+                    const tiltFactor = 90 / screenSize; // Full screen drag = 90 degrees
+                    
+                    const panDelta = -deltaX * panFactor;
+                    const tiltDelta = deltaY * tiltFactor;
+                    
+                    ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan + panDelta));
+                    ptzState.tilt = Math.max(-90, Math.min(90, ptzState.tilt + tiltDelta));
+                    
+                    ptzState.lastMouseX = e.touches[0].clientX;
+                    ptzState.lastMouseY = e.touches[0].clientY;
+                    
+                    // Update display
+                    updatePTZDisplay();
+                    
+                    // Send camera command
+                    sendCameraCommand();
+                } else if (e.touches.length === 2) {
+                    // Pinch zoom
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    const currentDistance = Math.hypot(
+                        touch2.clientX - touch1.clientX,
+                        touch2.clientY - touch1.clientY
+                    );
+                    
+                    // Calculate zoom delta based on pinch movement
+                    const zoomDelta = (currentDistance - ptzState.lastTouchDistance) * 0.01;
+                    changeZoom(zoomDelta);
+                    
+                    ptzState.lastTouchDistance = currentDistance;
+                }
+            }
+            
+            function handleTouchEnd(e) {
+                isLeftDragging = false;
+            }
+            
+            // Key state tracking
+            const keysPressed = {};
+            
+            // Handle keyboard input
+            function handleKeyDown(e) {
+                if (currentlyEditing) return; // Don't handle keyboard shortcuts if editing
+                
+                keysPressed[e.key.toLowerCase()] = true;
+                
+                // Handle immediate key actions
+                switch(e.key.toLowerCase()) {
+                    case 'r':
+                        resetPTZ();
+                        break;
+                    case '+':
+                    case '=':
+                        changeZoom(0.5);
+                        break;
+                    case '-':
+                    case '_':
+                        changeZoom(-0.5);
+                        break;
+                }
+                
+                // If WASD is pressed, apply continuous movement
+                applyKeyboardMovement();
+            }
+            
+            function handleKeyUp(e) {
+                keysPressed[e.key.toLowerCase()] = false;
+            }
+            
+            // Apply movement based on keyboard input
+            function applyKeyboardMovement() {
+                if (currentlyEditing) return; // Don't move if editing
+                
+                let panDelta = 0;
+                let tiltDelta = 0;
+                
+                if (keysPressed['a']) {
+                    panDelta -= 2;
+                }
+                if (keysPressed['d']) {
+                    panDelta += 2;
+                }
+                if (keysPressed['w']) {
+                    tiltDelta -= 2;
+                }
+                if (keysPressed['s']) {
+                    tiltDelta += 2;
+                }
+                
+                if (panDelta !== 0 || tiltDelta !== 0) {
+                    movePanTilt(panDelta, tiltDelta);
+                    
+                // Continue movement if keys still pressed
+                if (panDelta !== 0 || tiltDelta !== 0) {
+                        requestAnimationFrame(applyKeyboardMovement);
+                    }
+                }
+            }
+            
+            // Change zoom by delta amount
+            function changeZoom(delta) {
+                const maxZoom = 12.0;
+                const minZoom = 1.0;
+                
+                // Apply zoom change
+                ptzState.zoom = Math.max(minZoom, Math.min(maxZoom, ptzState.zoom + delta));
+                
+                // Update display
+                updatePTZDisplay();
+                
+                // Send camera command
+                sendCameraCommand();
+            }
+            
+            // Move pan/tilt by delta amounts
+            function movePanTilt(panDelta, tiltDelta) {
+                ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan + panDelta));
+                ptzState.tilt = Math.max(-90, Math.min(90, ptzState.tilt + tiltDelta));
+                
+                // Update display
+                updatePTZDisplay();
+                
+                // Send camera command
+                sendCameraCommand();
+            }
+            
+            // Reset PTZ to default values
+            function resetPTZ() {
+                ptzState.pan = 0.0;
+                ptzState.tilt = 0.0;
+                ptzState.zoom = 1.0;
+                
+                // Update display
+                updatePTZDisplay();
+                
+                // Send camera command
+                sendCameraCommand();
+            }
+            
+            // Send command to camera (would integrate with camera API)
+            function sendCameraCommand() {
+                // In a real implementation, this would send commands to the camera
+                console.log(`PTZ Command: Pan=${ptzState.pan.toFixed(1)}°, Tilt=${ptzState.tilt.toFixed(1)}°, Zoom=${ptzState.zoom.toFixed(1)}x`);
+                
+                // Simulate camera movement by changing the transform of the video stream
+                // No ease in/out animation - just direct linear movement
+                const translateX = -ptzState.pan / 2; // Scale down the effect
+                const translateY = ptzState.tilt / 2;
+                const scale = ptzState.zoom;
+                
+                // Remove transition for immediate movement without ease
+                videoStream.style.transition = 'none';
+                videoStream.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            }
+            
+            // Start the application
+            initControls();
+        });
+    </script>
+</body>
+</html>
