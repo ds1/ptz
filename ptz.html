@@ -941,23 +941,23 @@
                 );
                 
                 if (ptzState.zoomingIn) {
-                    document.body.style.cursor = 'zoom-in';
+                    document.documentElement.style.cursor = 'zoom-in';
                     mouseInteractionLayer.classList.add('force-cursor-zoom-in');
                 } else if (ptzState.zoomingOut) {
-                    document.body.style.cursor = 'zoom-out';
+                    document.documentElement.style.cursor = 'zoom-out';
                     mouseInteractionLayer.classList.add('force-cursor-zoom-out');
                 } else if (ptzState.axisLockMode) {
                     if (isLeftDragging || ptzState.activeDragButton === 0) {
-                        document.body.style.cursor = 'ew-resize';
+                        document.documentElement.style.cursor = 'ew-resize';
                         mouseInteractionLayer.classList.add('force-cursor-pan-only');
                     } else if (isRightDragging || ptzState.activeDragButton === 2) {
-                        document.body.style.cursor = 'ns-resize';
+                        document.documentElement.style.cursor = 'ns-resize';
                         mouseInteractionLayer.classList.add('force-cursor-tilt-only');
                     } else {
-                        document.body.style.cursor = 'default';
+                        document.documentElement.style.cursor = 'default';
                     }
                 } else {
-                    document.body.style.cursor = 'default';
+                    document.documentElement.style.cursor = 'default';
                 }
             }
             
@@ -1186,16 +1186,16 @@
                     isLeftDragging = true;
                     if (ptzState.axisLockMode) {
                         ptzState.activeDragButton = 0; // Left click = pan only
-                        document.body.style.cursor = 'ew-resize';
+                        document.documentElement.style.cursor = 'ew-resize';
                         mouseInteractionLayer.classList.add('force-cursor-pan-only');
                     } else {
-                        document.body.style.cursor = 'move';
+                        document.documentElement.style.cursor = 'move';
                     }
                 } else if (e.button === 2) { // Right mouse button
                     isRightDragging = true;
                     if (ptzState.axisLockMode) {
                         ptzState.activeDragButton = 2; // Right click = tilt only
-                        document.body.style.cursor = 'ns-resize';
+                        document.documentElement.style.cursor = 'ns-resize';
                         mouseInteractionLayer.classList.add('force-cursor-tilt-only');
                     }
                 }
@@ -1264,7 +1264,7 @@
                     ptzState.activeDragButton = null;
                     
                     // Reset cursor styles
-                    document.body.style.cursor = 'default';
+                    document.documentElement.style.cursor = 'default';
                     mouseInteractionLayer.classList.remove(
                         'force-cursor-pan-only', 'force-cursor-tilt-only',
                         'force-cursor-zoom-in', 'force-cursor-zoom-out'
@@ -1288,11 +1288,11 @@
                 ptzState.zoomingIn = delta > 0;
                 ptzState.zoomingOut = delta < 0;
                 
-                // Update cursor - important to set document.body.style.cursor
+                // Update cursor - important to set document.documentElement.style.cursor
                 if (ptzState.zoomingIn) {
-                    document.body.style.cursor = 'zoom-in';
+                    document.documentElement.style.cursor = 'zoom-in';
                 } else if (ptzState.zoomingOut) {
-                    document.body.style.cursor = 'zoom-out';
+                    document.documentElement.style.cursor = 'zoom-out';
                 }
                 updateCursor();
                 
@@ -1303,7 +1303,7 @@
                 setTimeout(() => {
                     ptzState.zoomingIn = false;
                     ptzState.zoomingOut = false;
-                    document.body.style.cursor = 'default';
+                    document.documentElement.style.cursor = 'default';
                     updateCursor();
                 }, 300);
             }
