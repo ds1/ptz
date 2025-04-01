@@ -452,6 +452,23 @@
             background-color: var(--accent-color);
             color: #000;
         }
+
+        /* Cursor Styles */
+        .force-cursor-pan-only {
+            cursor: ew-resize !important; 
+        }
+        
+        .force-cursor-tilt-only {
+            cursor: ns-resize !important;
+        }
+        
+        .force-cursor-zoom-in {
+            cursor: zoom-in !important;
+        }
+        
+        .force-cursor-zoom-out {
+            cursor: zoom-out !important;
+        }
         
         /* Camera icon for source button */
         .camera-icon {
@@ -916,22 +933,28 @@
             // Update cursor based on current interaction
             function updateCursor() {
                 // Remove all cursor classes first
-                mouseInteractionLayer.classList.remove('cursor-pan-only', 'cursor-tilt-only', 'cursor-zoom-in', 'cursor-zoom-out');
+                mouseInteractionLayer.classList.remove(
+                    'cursor-pan-only', 'cursor-tilt-only', 
+                    'cursor-zoom-in', 'cursor-zoom-out',
+                    'force-cursor-pan-only', 'force-cursor-tilt-only', 
+                    'force-cursor-zoom-in', 'force-cursor-zoom-out'
+                );
                 
                 if (ptzState.zoomingIn) {
-                    mouseInteractionLayer.classList.add('cursor-zoom-in');
+                    mouseInteractionLayer.classList.add('force-cursor-zoom-in');
                 } else if (ptzState.zoomingOut) {
-                    mouseInteractionLayer.classList.add('cursor-zoom-out');
+                    mouseInteractionLayer.classList.add('force-cursor-zoom-out');
                 } else if (ptzState.axisLockMode) {
-                    if (ptzState.activeDragButton === 0) {  // Left click for pan
-                        mouseInteractionLayer.classList.add('cursor-pan-only');
-                    } else if (ptzState.activeDragButton === 2) {  // Right click for tilt
-                        mouseInteractionLayer.classList.add('cursor-tilt-only');
+                    if (isLeftDragging || ptzState.activeDragButton === 0) {
+                        mouseInteractionLayer.classList.add('force-cursor-pan-only');
+                    } else if (isRightDragging || ptzState.activeDragButton === 2) {
+                        mouseInteractionLayer.classList.add('force-cursor-tilt-only');
+                    } else {
+                        // Default hover state in axis lock mode
+                        mouseInteractionLayer.classList.add('cursor-move');
                     }
-                } else {
-                    // Default cursor (move)
-                    mouseInteractionLayer.classList.remove('cursor-pan-only', 'cursor-tilt-only');
                 }
+                // Default cursor (move) is already set in CSS
             }
             
             // Start editing a value
@@ -1159,23 +1182,25 @@
                     isLeftDragging = true;
                     if (ptzState.axisLockMode) {
                         ptzState.activeDragButton = 0; // Left click = pan only
+                        // Force cursor update immediately
+                        mouseInteractionLayer.classList.remove('cursor-pan-only', 'cursor-tilt-only', 'cursor-move');
+                        mouseInteractionLayer.classList.add('force-cursor-pan-only');
                     }
                 } else if (e.button === 2) { // Right mouse button
                     isRightDragging = true;
                     if (ptzState.axisLockMode) {
                         ptzState.activeDragButton = 2; // Right click = tilt only
+                        // Force cursor update immediately
+                        mouseInteractionLayer.classList.remove('cursor-pan-only', 'cursor-tilt-only', 'cursor-move');
+                        mouseInteractionLayer.classList.add('force-cursor-tilt-only');
                     }
                 }
-                
-                // Update cursor based on active button
-                updateCursor();
             }
             
             function handleMouseMove(e) {
                 if ((!isLeftDragging && !isRightDragging) || currentlyEditing) return;
 
-                // Ensure cursor stays correct during drag operation
-                updateCursor();
+                // The forced cursor class already set in mouseDown will persist here
                 
                 // Calculate movement deltas
                 const deltaX = e.clientX - ptzState.lastMouseX;
@@ -1234,8 +1259,11 @@
                 if (!isLeftDragging && !isRightDragging) {
                     ptzState.activeDragButton = null;
                     
-                    // Reset cursor
-                    updateCursor();
+                    // Reset cursor - remove forced cursor styles
+                    mouseInteractionLayer.classList.remove(
+                        'force-cursor-pan-only', 'force-cursor-tilt-only',
+                        'force-cursor-zoom-in', 'force-cursor-zoom-out'
+                    );
                     
                     // Send a final command to ensure the position is set
                     sendCameraCommand();
