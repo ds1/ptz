@@ -46,6 +46,9 @@
             height: 100%;
             position: relative;
             z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
         #placeholder-image {
@@ -59,6 +62,12 @@
             height: 100%;
             object-fit: cover;
             display: none;
+        }
+        
+        iframe {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: fill !important;
         }
         
         /* Control panels and overlays */
@@ -198,8 +207,8 @@
             line-height: 1.5;
             z-index: 100;
             display: none;
-            width: 300px; /* Fixed width for better readability */
-            max-width: 90vw; /* Responsive for small screens */
+            width: 300px;
+            max-width: 90vw;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             pointer-events: auto;
         }
@@ -358,7 +367,7 @@
                 <h3>PTZ Camera Controls</h3>
                 
                 <p><strong>Mouse Controls:</strong><br>
-                Left-click and drag to pan and tilt the camera.<br>
+                Left-click and drag anywhere to pan and tilt the camera.<br>
                 Use the scroll wheel to zoom in and out.</p>
                 
                 <p><strong>Direct Value Entry:</strong><br>
@@ -451,13 +460,20 @@
             zoom: 1.0,     // Range: 1.0 to 12.0
             // Last mouse position for calculating deltas
             lastMouseX: 0,
-            lastMouseY: 0
+            lastMouseY: 0,
+            // Flag to indicate if a command is currently being sent
+            commandInProgress: false,
+            // Timestamp of last command sent
+            lastCommandTime: 0
         };
         
         // Mouse state variables
         let isLeftDragging = false;
         // Currently editing value
         let currentlyEditing = null;
+        
+        // Command throttling to avoid overwhelming the API
+        const COMMAND_THROTTLE_MS = 50; // Send at most 1 command every 50ms
         
         // Initialize when DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
@@ -740,6 +756,14 @@
             function handleMouseDown(e) {
                 if (currentlyEditing) return; // Don't drag if editing a value
                 
+                // Check if the click is on an interactive control element
+                if (e.target.closest('.control-panel') || 
+                    e.target.closest('.top-left-controls') || 
+                    e.target.closest('.help-panel') ||
+                    e.target.closest('.source-modal')) {
+                    return; // Don't initiate drag on control elements
+                }
+                
                 e.preventDefault();
                 
                 // Store initial mouse position
@@ -755,38 +779,42 @@
             function handleMouseMove(e) {
                 if (!isLeftDragging) return;
                 
-                // Calculate mouse movement deltas
-                const deltaX = e.clientX - ptzState.lastMouseX;
-                const deltaY = e.clientY - ptzState.lastMouseY;
+                // Calculate the relative position in the viewport (0 to 1)
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
                 
-                // Calculate movement speed based on screen size
-                const screenSize = Math.min(window.innerWidth, window.innerHeight);
-                const panFactor = 180 / screenSize; // Full screen drag = 180 degrees
-                const tiltFactor = 90 / screenSize; // Full screen drag = 90 degrees
+                // Map position to pan/tilt values proportionally
+                // For pan: left (0) = -180, right (1) = 180
+                // For tilt: top (0) = -90, bottom (1) = 90
+                const xPos = e.clientX / viewportWidth;
+                const yPos = e.clientY / viewportHeight;
                 
-                // Left-click drag for pan/tilt
-                // Pan is inverted for natural feeling (dragging right = camera pans left)
-                const panDelta = -deltaX * panFactor;
-                const tiltDelta = deltaY * tiltFactor;
+                // Calculate new pan/tilt values based on position
+                // We invert the Y axis since screen coordinates start at the top
+                const newPan = (xPos * 2 - 1) * 180; // Map 0-1 to -180-180
+                const newTilt = (yPos * 2 - 1) * 90;  // Map 0-1 to -90-90
                 
-                // Update pan/tilt values with limits
-                ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan + panDelta));
-                ptzState.tilt = Math.max(-90, Math.min(90, ptzState.tilt + tiltDelta));
+                // Apply smoothing/sensitivity reduction (adjust these values to change sensitivity)
+                const sensitivity = 0.05; // Lower = less sensitive
+                ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
+                ptzState.tilt = ptzState.tilt + (newTilt - ptzState.tilt) * sensitivity;
                 
-                // Update last mouse position
-                ptzState.lastMouseX = e.clientX;
-                ptzState.lastMouseY = e.clientY;
+                // Ensure values stay within bounds
+                ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan));
+                ptzState.tilt = Math.max(-90, Math.min(90, ptzState.tilt));
                 
                 // Update display
                 updatePTZDisplay();
                 
-                // Send camera command
-                sendCameraCommand();
+                // Send camera command (throttled)
+                throttledSendCommand();
             }
             
             function handleMouseUp(e) {
                 if (e.button === 0) {
                     isLeftDragging = false;
+                    // Send a final command to ensure the position is set
+                    sendCameraCommand();
                 }
             }
             
@@ -804,6 +832,14 @@
             // Touch event handlers (basic implementation)
             function handleTouchStart(e) {
                 if (currentlyEditing) return; // Don't handle touch if editing
+                
+                // Check if the touch is on an interactive control element
+                if (e.target.closest('.control-panel') || 
+                    e.target.closest('.top-left-controls') || 
+                    e.target.closest('.help-panel') ||
+                    e.target.closest('.source-modal')) {
+                    return; // Don't initiate touch actions on control elements
+                }
                 
                 e.preventDefault();
                 
@@ -829,29 +865,32 @@
                 e.preventDefault();
                 
                 if (isLeftDragging && e.touches.length === 1) {
-                    // Single touch pan/tilt
-                    const deltaX = e.touches[0].clientX - ptzState.lastMouseX;
-                    const deltaY = e.touches[0].clientY - ptzState.lastMouseY;
+                    // Calculate the relative position in the viewport (0 to 1)
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
                     
-                    // Calculate movement speed based on screen size
-                    const screenSize = Math.min(window.innerWidth, window.innerHeight);
-                    const panFactor = 180 / screenSize; // Full screen drag = 180 degrees
-                    const tiltFactor = 90 / screenSize; // Full screen drag = 90 degrees
+                    // Map position to pan/tilt values proportionally
+                    const xPos = e.touches[0].clientX / viewportWidth;
+                    const yPos = e.touches[0].clientY / viewportHeight;
                     
-                    const panDelta = -deltaX * panFactor;
-                    const tiltDelta = deltaY * tiltFactor;
+                    // Calculate new pan/tilt values based on position
+                    const newPan = (xPos * 2 - 1) * 180; // Map 0-1 to -180-180
+                    const newTilt = (yPos * 2 - 1) * 90;  // Map 0-1 to -90-90
                     
-                    ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan + panDelta));
-                    ptzState.tilt = Math.max(-90, Math.min(90, ptzState.tilt + tiltDelta));
+                    // Apply smoothing/sensitivity reduction
+                    const sensitivity = 0.05; // Lower = less sensitive
+                    ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
+                    ptzState.tilt = ptzState.tilt + (newTilt - ptzState.tilt) * sensitivity;
                     
-                    ptzState.lastMouseX = e.touches[0].clientX;
-                    ptzState.lastMouseY = e.touches[0].clientY;
+                    // Ensure values stay within bounds
+                    ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan));
+                    ptzState.tilt = Math.max(-90, Math.min(90, ptzState.tilt));
                     
                     // Update display
                     updatePTZDisplay();
                     
-                    // Send camera command
-                    sendCameraCommand();
+                    // Send camera command (throttled)
+                    throttledSendCommand();
                 } else if (e.touches.length === 2) {
                     // Pinch zoom
                     const touch1 = e.touches[0];
@@ -870,39 +909,68 @@
             }
             
             function handleTouchEnd(e) {
-                isLeftDragging = false;
+                if (isLeftDragging) {
+                    isLeftDragging = false;
+                    // Send a final command to ensure the position is set
+                    sendCameraCommand();
+                }
+            }
+            
+            // Throttle function to limit how often commands are sent
+            function throttledSendCommand() {
+                const now = Date.now();
+                if (now - ptzState.lastCommandTime >= COMMAND_THROTTLE_MS) {
+                    sendCameraCommand();
+                    ptzState.lastCommandTime = now;
+                }
             }
             
             // Key state tracking
             const keysPressed = {};
+            let keyboardInterval = null;
             
             // Handle keyboard input
             function handleKeyDown(e) {
                 if (currentlyEditing) return; // Don't handle keyboard shortcuts if editing
                 
-                keysPressed[e.key.toLowerCase()] = true;
+                const key = e.key.toLowerCase();
                 
-                // Handle immediate key actions
-                switch(e.key.toLowerCase()) {
-                    case 'r':
-                        resetPTZ();
-                        break;
-                    case '+':
-                    case '=':
-                        changeZoom(0.5);
-                        break;
-                    case '-':
-                    case '_':
-                        changeZoom(-0.5);
-                        break;
+                // Only process if key wasn't already pressed (avoid key repeat)
+                if (!keysPressed[key]) {
+                    keysPressed[key] = true;
+                    
+                    // Handle immediate key actions
+                    switch(key) {
+                        case 'r':
+                            resetPTZ();
+                            break;
+                        case '+':
+                        case '=':
+                            changeZoom(0.5);
+                            break;
+                        case '-':
+                        case '_':
+                            changeZoom(-0.5);
+                            break;
+                    }
+                    
+                    // Start continuous movement for WASD keys
+                    if (['w', 'a', 's', 'd'].includes(key) && keyboardInterval === null) {
+                        applyKeyboardMovement();
+                        keyboardInterval = setInterval(applyKeyboardMovement, 50);
+                    }
                 }
-                
-                // If WASD is pressed, apply continuous movement
-                applyKeyboardMovement();
             }
             
             function handleKeyUp(e) {
-                keysPressed[e.key.toLowerCase()] = false;
+                const key = e.key.toLowerCase();
+                keysPressed[key] = false;
+                
+                // If no WASD keys remain pressed, stop the interval
+                if (!['w', 'a', 's', 'd'].some(k => keysPressed[k]) && keyboardInterval !== null) {
+                    clearInterval(keyboardInterval);
+                    keyboardInterval = null;
+                }
             }
             
             // Apply movement based on keyboard input
@@ -911,27 +979,25 @@
                 
                 let panDelta = 0;
                 let tiltDelta = 0;
+                const moveSpeed = 2; // Degrees per keypress
                 
                 if (keysPressed['a']) {
-                    panDelta -= 2;
+                    panDelta -= moveSpeed;
                 }
                 if (keysPressed['d']) {
-                    panDelta += 2;
+                    panDelta += moveSpeed;
                 }
                 if (keysPressed['w']) {
-                    tiltDelta -= 2;
+                    tiltDelta -= moveSpeed;
                 }
                 if (keysPressed['s']) {
-                    tiltDelta += 2;
+                    tiltDelta += moveSpeed;
                 }
                 
                 if (panDelta !== 0 || tiltDelta !== 0) {
                     movePanTilt(panDelta, tiltDelta);
-                    
-                    // Continue movement if keys still pressed
-                    if (panDelta !== 0 || tiltDelta !== 0) {
-                        requestAnimationFrame(applyKeyboardMovement);
-                    }
+                    // Send command immediately to ensure responsiveness
+                    sendCameraCommand();
                 }
             }
             
@@ -957,9 +1023,6 @@
                 
                 // Update display
                 updatePTZDisplay();
-                
-                // Send camera command
-                sendCameraCommand();
             }
             
             // Reset PTZ to default values
@@ -977,16 +1040,15 @@
             
             // Send Command to API
             function sendCameraCommand() {
+                // Prevent multiple simultaneous commands
+                if (ptzState.commandInProgress) {
+                    return;
+                }
+                
+                ptzState.commandInProgress = true;
+                
                 // Log command for debugging
                 console.log(`PTZ Command: Pan=${ptzState.pan.toFixed(1)}°, Tilt=${ptzState.tilt.toFixed(1)}°, Zoom=${ptzState.zoom.toFixed(1)}x`);
-                
-                // Apply visual feedback
-                const translateX = -ptzState.pan / 2;
-                const translateY = ptzState.tilt / 2;
-                const scale = ptzState.zoom;
-                
-                videoStream.style.transition = 'none';
-                videoStream.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
                 
                 // Check if we're using the AXIS camera source
                 const selectedSource = document.querySelector('input[name="video-source"]:checked');
@@ -995,6 +1057,7 @@
                     const credentials = getAxisCredentials();
                     if (!credentials) {
                         console.error('No camera credentials available');
+                        ptzState.commandInProgress = false;
                         return;
                     }
                     
@@ -1013,7 +1076,7 @@
                     // This is a common technique for making authenticated requests without CORS issues
                     const authImg = new Image();
                     
-                    // Set authentication in the URL (not ideal but necessary without server)
+                    // Set authentication in the URL
                     authImg.src = `${axisPtzUrl}?${params.toString()}&dummy=${Date.now()}`;
                     
                     // Clean up the image after loading (or error)
@@ -1021,37 +1084,31 @@
                         if (authImg.parentNode) {
                             authImg.parentNode.removeChild(authImg);
                         }
+                        ptzState.commandInProgress = false;
                     };
                     
                     // Add to DOM temporarily (hidden)
                     authImg.style.display = 'none';
                     document.body.appendChild(authImg);
+                } else {
+                    // For non-axis sources, just apply visual feedback
+                    
+                    // Apply visual feedback
+                    const translateX = -ptzState.pan / 2;
+                    const translateY = ptzState.tilt / 2;
+                    const scale = ptzState.zoom;
+                    
+                    videoStream.style.transition = 'transform 0.1s ease-out';
+                    videoStream.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+                    
+                    // Clear command in progress flag after timeout
+                    setTimeout(() => {
+                        ptzState.commandInProgress = false;
+                    }, 50);
                 }
             }
 
-            // Helper functions for authentication and error handling
-            function promptForCredentials() {
-                // Create a simple dialog for camera credentials
-                const cameraIp = prompt('Enter camera IP address (e.g., 192.168.1.100):', '');
-                if (!cameraIp) return null;
-                
-                const username = prompt('Enter camera username:', '');
-                if (!username) return null;
-                
-                const password = prompt('Enter camera password:', '');
-                if (!password) return null;
-                
-                return { cameraIp, username, password };
-            }
-
-            function handleCameraError() {
-                console.error('Error loading AXIS camera stream');
-                alert('Could not connect to AXIS camera. Please check credentials or try another video source.');
-                document.querySelector('input[value="placeholder"]').checked = true;
-                placeholderImage.style.display = 'block';
-            }
-            
-            // Function to securely prompt for and store credentials
+            // Function to securely prompt for and store credentials with masked password
             function setupAxisCamera() {
                 // Prompt for credentials
                 const cameraIp = prompt('Enter camera IP address (e.g., 192.168.1.100):', '');
@@ -1060,20 +1117,88 @@
                 const username = prompt('Enter camera username:', '');
                 if (!username) return false;
                 
-                const password = prompt('Enter camera password:', '');
-                if (!password) return false;
+                // Create password prompt with masked input
+                const passwordPrompt = createPasswordPrompt('Enter camera password:');
                 
-                // Store in sessionStorage (cleared when tab closes)
-                sessionStorage.setItem('axisCamera', JSON.stringify({
-                    cameraIp,
-                    timestamp: Date.now() // Add timestamp for potential expiration
-                }));
+                // Show the password prompt and wait for result
+                return new Promise(resolve => {
+                    passwordPrompt.showModal();
+                    
+                    // Handle form submission
+                    passwordPrompt.querySelector('form').addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        const password = passwordPrompt.querySelector('input[type="password"]').value;
+                        
+                        if (!password) {
+                            passwordPrompt.close();
+                            resolve(false);
+                            return;
+                        }
+                        
+                        // Store in sessionStorage (cleared when tab closes)
+                        sessionStorage.setItem('axisCamera', JSON.stringify({
+                            cameraIp,
+                            timestamp: Date.now() // Add timestamp for potential expiration
+                        }));
+                        
+                        // Store credentials separately with limited lifetime
+                        const encodedAuth = btoa(`${username}:${password}`);
+                        sessionStorage.setItem('axisCameraAuth', encodedAuth);
+                        
+                        passwordPrompt.close();
+                        document.body.removeChild(passwordPrompt);
+                        resolve(true);
+                    });
+                    
+                    // Handle cancel button
+                    passwordPrompt.querySelector('.cancel-button').addEventListener('click', () => {
+                        passwordPrompt.close();
+                        document.body.removeChild(passwordPrompt);
+                        resolve(false);
+                    });
+                });
+            }
+            
+            // Create password prompt dialog with masked input
+            function createPasswordPrompt(message) {
+                // Create dialog element
+                const dialog = document.createElement('dialog');
+                dialog.className = 'password-dialog';
                 
-                // Store credentials separately with limited lifetime
-                const encodedAuth = btoa(`${username}:${password}`);
-                sessionStorage.setItem('axisCameraAuth', encodedAuth);
+                // Add styles
+                dialog.style.backgroundColor = 'var(--secondary-bg)';
+                dialog.style.color = 'var(--primary-text)';
+                dialog.style.border = 'none';
+                dialog.style.borderRadius = '8px';
+                dialog.style.padding = '20px';
+                dialog.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.5)';
+                dialog.style.maxWidth = '400px';
+                dialog.style.width = '90%';
                 
-                return true;
+                // Create content
+                dialog.innerHTML = `
+                    <h3 style="margin-bottom: 15px; color: var(--accent-color);">${message}</h3>
+                    <form>
+                        <input type="password" style="width: 100%; padding: 10px; margin-bottom: 15px; 
+                                background: var(--control-bg); border: 1px solid rgba(255,255,255,0.1); 
+                                color: var(--primary-text); border-radius: 4px;">
+                        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                            <button type="button" class="cancel-button" 
+                                    style="padding: 8px 15px; background: var(--control-bg); 
+                                    color: var(--primary-text); border: none; border-radius: 4px; 
+                                    cursor: pointer;">Cancel</button>
+                            <button type="submit" 
+                                    style="padding: 8px 15px; background: var(--accent-color); 
+                                    color: #000; border: none; border-radius: 4px; 
+                                    cursor: pointer;">OK</button>
+                        </div>
+                    </form>
+                `;
+                
+                // Add to document
+                document.body.appendChild(dialog);
+                
+                return dialog;
             }
 
             // Function to get stored credentials
