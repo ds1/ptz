@@ -70,6 +70,17 @@
             object-fit: fill !important;
         }
         
+        /* Interactive overlay for mouse interactions */
+        .mouse-interaction-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 50;
+            cursor: move; /* Show a move cursor to indicate interactivity */
+        }
+        
         /* Control panels and overlays */
         .top-left-controls {
             position: absolute;
@@ -207,8 +218,8 @@
             line-height: 1.5;
             z-index: 100;
             display: none;
-            width: 300px;
-            max-width: 90vw;
+            width: 300px; /* Fixed width for better readability */
+            max-width: 90vw; /* Responsive for small screens */
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             pointer-events: auto;
         }
@@ -334,6 +345,83 @@
             background-color: #00c3ff;
         }
         
+        /* Custom dialog styling */
+        .custom-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .dialog-content {
+            background-color: var(--secondary-bg);
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .dialog-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .dialog-header h2 {
+            color: var(--accent-color);
+            font-size: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--primary-text);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: var(--control-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--primary-text);
+        }
+        
+        .dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .dialog-button {
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .button-cancel {
+            background-color: var(--control-bg);
+            color: var(--primary-text);
+        }
+        
+        .button-primary {
+            background-color: var(--accent-color);
+            color: #000;
+        }
+        
         /* Camera icon for source button */
         .camera-icon {
             width: 20px;
@@ -349,6 +437,9 @@
             <img src="/api/placeholder/1920/1080" alt="Live Camera Feed" id="placeholder-image">
             <video id="video-feed" autoplay muted></video>
         </div>
+        
+        <!-- Mouse interaction layer -->
+        <div class="mouse-interaction-layer" id="mouse-interaction-layer"></div>
         
         <!-- Top-left controls: Help and source buttons -->
         <div class="top-left-controls">
@@ -449,6 +540,37 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Camera credentials dialog template (hidden by default) -->
+        <div class="custom-dialog" id="camera-credentials-dialog" style="display: none;">
+            <div class="dialog-content">
+                <div class="dialog-header">
+                    <h2>Camera Credentials</h2>
+                </div>
+                
+                <form id="credentials-form">
+                    <div class="form-group">
+                        <label for="camera-ip">Camera IP Address:</label>
+                        <input type="text" id="camera-ip" class="form-control" placeholder="e.g., 192.168.1.100" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="camera-username">Username:</label>
+                        <input type="text" id="camera-username" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="camera-password">Password:</label>
+                        <input type="password" id="camera-password" class="form-control" required>
+                    </div>
+                    
+                    <div class="dialog-footer">
+                        <button type="button" class="dialog-button button-cancel" id="credentials-cancel">Cancel</button>
+                        <button type="submit" class="dialog-button button-primary">Connect</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
     
     <!-- JavaScript for PTZ control functionality -->
@@ -479,10 +601,14 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Get all required DOM elements
             const videoContainer = document.querySelector('.video-container');
+            const mouseInteractionLayer = document.getElementById('mouse-interaction-layer');
             const videoStream = document.querySelector('.video-stream');
             const placeholderImage = document.getElementById('placeholder-image');
             const videoFeed = document.getElementById('video-feed');
             const sourceModal = document.getElementById('source-modal');
+            const credentialsDialog = document.getElementById('camera-credentials-dialog');
+            const credentialsForm = document.getElementById('credentials-form');
+            const credentialsCancel = document.getElementById('credentials-cancel');
             const applySourceButton = document.getElementById('apply-source-button');
             const sourceButton = document.getElementById('source-button');
             const zoomIn = document.getElementById('zoom-in');
@@ -500,19 +626,19 @@
             function initControls() {
                 updatePTZDisplay();
                 
-                // Mouse events for video container (pan/tilt)
-                videoContainer.addEventListener('mousedown', handleMouseDown);
+                // Mouse events for interaction layer (pan/tilt)
+                mouseInteractionLayer.addEventListener('mousedown', handleMouseDown);
                 document.addEventListener('mousemove', handleMouseMove);
                 document.addEventListener('mouseup', handleMouseUp);
                 
                 // Prevent context menu on right-click
-                videoContainer.addEventListener('contextmenu', (e) => {
+                mouseInteractionLayer.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     return false;
                 });
                 
-                // Touch events (basic implementation)
-                videoContainer.addEventListener('touchstart', handleTouchStart);
+                // Touch events for interaction layer
+                mouseInteractionLayer.addEventListener('touchstart', handleTouchStart);
                 document.addEventListener('touchmove', handleTouchMove);
                 document.addEventListener('touchend', handleTouchEnd);
                 
@@ -521,7 +647,7 @@
                 zoomOut.addEventListener('click', () => changeZoom(-0.5));
                 
                 // Mouse wheel for zoom
-                videoContainer.addEventListener('wheel', handleMouseWheel);
+                mouseInteractionLayer.addEventListener('wheel', handleMouseWheel);
                 
                 // Help button
                 helpButton.addEventListener('click', toggleHelpPanel);
@@ -538,6 +664,30 @@
                     changeVideoSource(selectedSource);
                     sourceModal.style.display = 'none';
                     sourceButton.style.display = 'flex';
+                });
+                
+                // Camera credentials form
+                credentialsForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const cameraIp = document.getElementById('camera-ip').value;
+                    const username = document.getElementById('camera-username').value;
+                    const password = document.getElementById('camera-password').value;
+                    
+                    if (cameraIp && username && password) {
+                        // Store credentials
+                        storeAxisCredentials(cameraIp, username, password);
+                        // Hide the dialog
+                        credentialsDialog.style.display = 'none';
+                        // Continue with camera connection
+                        connectToAxisCamera();
+                    }
+                });
+                
+                // Cancel button in credentials dialog
+                credentialsCancel.addEventListener('click', () => {
+                    credentialsDialog.style.display = 'none';
+                    // Reset selection to placeholder
+                    document.querySelector('input[value="placeholder"]').checked = true;
                 });
                 
                 // Make values directly editable
@@ -689,80 +839,89 @@
                         // First check if we already have credentials
                         let credentials = getAxisCredentials();
                         
-                        // If not, prompt for them
+                        // If not, show the credentials dialog
                         if (!credentials) {
-                            if (!setupAxisCamera()) {
-                                // User cancelled, revert to placeholder
-                                document.querySelector('input[value="placeholder"]').checked = true;
-                                placeholderImage.style.display = 'block';
-                                return;
-                            }
-                            credentials = getAxisCredentials();
+                            showCredentialsDialog();
+                        } else {
+                            connectToAxisCamera();
                         }
-                        
-                        // Create an iframe to hold the stream
-                        const axisFrame = document.createElement('iframe');
-                        axisFrame.style.width = '100%';
-                        axisFrame.style.height = '100%';
-                        axisFrame.style.border = 'none';
-                        
-                        // Set up the authentication and source
-                        const streamUrl = `http://${credentials.cameraIp}/axis-cgi/mjpg/video.cgi`;
-                        
-                        // Create a simple auth form that will submit automatically
-                        const authForm = document.createElement('form');
-                        authForm.method = 'GET';
-                        authForm.action = streamUrl;
-                        authForm.style.display = 'none';
-                        authForm.target = 'camera-stream-frame';
-                        document.body.appendChild(authForm);
-                        
-                        // Name the iframe for the form target
-                        axisFrame.name = 'camera-stream-frame';
-                        
-                        // Add the iframe to the container
-                        videoStream.innerHTML = '';
-                        videoStream.appendChild(axisFrame);
-                        
-                        // Submit the form to load the authenticated stream
-                        authForm.submit();
-                        
-                        // Clean up the form after submission
-                        setTimeout(() => {
-                            document.body.removeChild(authForm);
-                        }, 1000);
-                        
-                        // Hide placeholder once frame is loaded
-                        axisFrame.onload = () => {
-                            placeholderImage.style.display = 'none';
-                        };
-                        
-                        // Handle loading errors
-                        axisFrame.onerror = () => {
-                            console.error('Error loading AXIS camera stream');
-                            alert('Could not connect to AXIS camera. Please check credentials or network connection.');
-                            document.querySelector('input[value="placeholder"]').checked = true;
-                            placeholderImage.style.display = 'block';
-                            
-                            // Clear potentially invalid credentials
-                            sessionStorage.removeItem('axisCamera');
-                            sessionStorage.removeItem('axisCameraAuth');
-                        };
                         break;
                 }
+            }
+            
+            // Show credentials dialog
+            function showCredentialsDialog() {
+                // Reset form
+                document.getElementById('credentials-form').reset();
+                
+                // Show dialog
+                credentialsDialog.style.display = 'flex';
+                
+                // Focus on first field
+                document.getElementById('camera-ip').focus();
+            }
+            
+            // Connect to AXIS camera with stored credentials
+            function connectToAxisCamera() {
+                const credentials = getAxisCredentials();
+                if (!credentials) {
+                    console.error('No camera credentials available');
+                    return;
+                }
+                
+                // Create an iframe to hold the stream
+                const axisFrame = document.createElement('iframe');
+                axisFrame.style.width = '100%';
+                axisFrame.style.height = '100%';
+                axisFrame.style.border = 'none';
+                
+                // Set up the authentication and source
+                const streamUrl = `http://${credentials.cameraIp}/axis-cgi/mjpg/video.cgi`;
+                
+                // Create a simple auth form that will submit automatically
+                const authForm = document.createElement('form');
+                authForm.method = 'GET';
+                authForm.action = streamUrl;
+                authForm.style.display = 'none';
+                authForm.target = 'camera-stream-frame';
+                document.body.appendChild(authForm);
+                
+                // Name the iframe for the form target
+                axisFrame.name = 'camera-stream-frame';
+                
+                // Add the iframe to the container
+                videoStream.innerHTML = '';
+                videoStream.appendChild(axisFrame);
+                
+                // Submit the form to load the authenticated stream
+                authForm.submit();
+                
+                // Clean up the form after submission
+                setTimeout(() => {
+                    document.body.removeChild(authForm);
+                }, 1000);
+                
+                // Hide placeholder once frame is loaded
+                axisFrame.onload = () => {
+                    placeholderImage.style.display = 'none';
+                };
+                
+                // Handle loading errors
+                axisFrame.onerror = () => {
+                    console.error('Error loading AXIS camera stream');
+                    alert('Could not connect to AXIS camera. Please check credentials or network connection.');
+                    document.querySelector('input[value="placeholder"]').checked = true;
+                    placeholderImage.style.display = 'block';
+                    
+                    // Clear potentially invalid credentials
+                    sessionStorage.removeItem('axisCamera');
+                    sessionStorage.removeItem('axisCameraAuth');
+                };
             }
             
             // Mouse event handlers
             function handleMouseDown(e) {
                 if (currentlyEditing) return; // Don't drag if editing a value
-                
-                // Check if the click is on an interactive control element
-                if (e.target.closest('.control-panel') || 
-                    e.target.closest('.top-left-controls') || 
-                    e.target.closest('.help-panel') ||
-                    e.target.closest('.source-modal')) {
-                    return; // Don't initiate drag on control elements
-                }
                 
                 e.preventDefault();
                 
@@ -829,17 +988,9 @@
                 changeZoom(delta);
             }
             
-            // Touch event handlers (basic implementation)
+            // Touch event handlers
             function handleTouchStart(e) {
                 if (currentlyEditing) return; // Don't handle touch if editing
-                
-                // Check if the touch is on an interactive control element
-                if (e.target.closest('.control-panel') || 
-                    e.target.closest('.top-left-controls') || 
-                    e.target.closest('.help-panel') ||
-                    e.target.closest('.source-modal')) {
-                    return; // Don't initiate touch actions on control elements
-                }
                 
                 e.preventDefault();
                 
@@ -931,7 +1082,11 @@
             
             // Handle keyboard input
             function handleKeyDown(e) {
-                if (currentlyEditing) return; // Don't handle keyboard shortcuts if editing
+                // Don't handle if editing
+                if (currentlyEditing) return;
+                
+                // Don't handle if inside an input field
+                if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
                 
                 const key = e.key.toLowerCase();
                 
@@ -1108,97 +1263,19 @@
                 }
             }
 
-            // Function to securely prompt for and store credentials with masked password
-            function setupAxisCamera() {
-                // Prompt for credentials
-                const cameraIp = prompt('Enter camera IP address (e.g., 192.168.1.100):', '');
-                if (!cameraIp) return false;
+            // Store camera credentials
+            function storeAxisCredentials(cameraIp, username, password) {
+                // Store in sessionStorage (cleared when tab closes)
+                sessionStorage.setItem('axisCamera', JSON.stringify({
+                    cameraIp,
+                    timestamp: Date.now() // Add timestamp for potential expiration
+                }));
                 
-                const username = prompt('Enter camera username:', '');
-                if (!username) return false;
+                // Store credentials separately with limited lifetime
+                const encodedAuth = btoa(`${username}:${password}`);
+                sessionStorage.setItem('axisCameraAuth', encodedAuth);
                 
-                // Create password prompt with masked input
-                const passwordPrompt = createPasswordPrompt('Enter camera password:');
-                
-                // Show the password prompt and wait for result
-                return new Promise(resolve => {
-                    passwordPrompt.showModal();
-                    
-                    // Handle form submission
-                    passwordPrompt.querySelector('form').addEventListener('submit', (e) => {
-                        e.preventDefault();
-                        const password = passwordPrompt.querySelector('input[type="password"]').value;
-                        
-                        if (!password) {
-                            passwordPrompt.close();
-                            resolve(false);
-                            return;
-                        }
-                        
-                        // Store in sessionStorage (cleared when tab closes)
-                        sessionStorage.setItem('axisCamera', JSON.stringify({
-                            cameraIp,
-                            timestamp: Date.now() // Add timestamp for potential expiration
-                        }));
-                        
-                        // Store credentials separately with limited lifetime
-                        const encodedAuth = btoa(`${username}:${password}`);
-                        sessionStorage.setItem('axisCameraAuth', encodedAuth);
-                        
-                        passwordPrompt.close();
-                        document.body.removeChild(passwordPrompt);
-                        resolve(true);
-                    });
-                    
-                    // Handle cancel button
-                    passwordPrompt.querySelector('.cancel-button').addEventListener('click', () => {
-                        passwordPrompt.close();
-                        document.body.removeChild(passwordPrompt);
-                        resolve(false);
-                    });
-                });
-            }
-            
-            // Create password prompt dialog with masked input
-            function createPasswordPrompt(message) {
-                // Create dialog element
-                const dialog = document.createElement('dialog');
-                dialog.className = 'password-dialog';
-                
-                // Add styles
-                dialog.style.backgroundColor = 'var(--secondary-bg)';
-                dialog.style.color = 'var(--primary-text)';
-                dialog.style.border = 'none';
-                dialog.style.borderRadius = '8px';
-                dialog.style.padding = '20px';
-                dialog.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.5)';
-                dialog.style.maxWidth = '400px';
-                dialog.style.width = '90%';
-                
-                // Create content
-                dialog.innerHTML = `
-                    <h3 style="margin-bottom: 15px; color: var(--accent-color);">${message}</h3>
-                    <form>
-                        <input type="password" style="width: 100%; padding: 10px; margin-bottom: 15px; 
-                                background: var(--control-bg); border: 1px solid rgba(255,255,255,0.1); 
-                                color: var(--primary-text); border-radius: 4px;">
-                        <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                            <button type="button" class="cancel-button" 
-                                    style="padding: 8px 15px; background: var(--control-bg); 
-                                    color: var(--primary-text); border: none; border-radius: 4px; 
-                                    cursor: pointer;">Cancel</button>
-                            <button type="submit" 
-                                    style="padding: 8px 15px; background: var(--accent-color); 
-                                    color: #000; border: none; border-radius: 4px; 
-                                    cursor: pointer;">OK</button>
-                        </div>
-                    </form>
-                `;
-                
-                // Add to document
-                document.body.appendChild(dialog);
-                
-                return dialog;
+                return true;
             }
 
             // Function to get stored credentials
@@ -1230,8 +1307,19 @@
                 }
             }
 
+            // Add a function to focus the window initially to capture keyboard events
+            function setInitialFocus() {
+                // Focus on the window to capture keyboard events
+                window.focus();
+                
+                // Make the interaction layer focusable and focus on it
+                mouseInteractionLayer.setAttribute('tabindex', '0');
+                mouseInteractionLayer.focus();
+            }
+
             // Start the application
             initControls();
+            setInitialFocus();
         });
     </script>
 </body>
