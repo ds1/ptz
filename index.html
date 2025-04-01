@@ -11,10 +11,10 @@
             --secondary-bg: #1e1e1e;
             --primary-text: #e0e0e0;
             --secondary-text: #a0a0a0;
-            --accent-color: #F79837; /* Changed from #00b3ff to #F79837 (orange) */
+            --accent-color: #F79837;
             --control-bg: rgba(40, 40, 40, 0.7);
             --overlay-bg: rgba(0, 0, 0, 0.5);
-            --font-size-base: 16px; /* Increased base font size */
+            --font-size-base: 16px;
         }
         
         * {
@@ -30,7 +30,7 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-            font-size: var(--font-size-base); /* Base font size increased */
+            font-size: var(--font-size-base);
         }
         
         /* Main video container */
@@ -150,7 +150,7 @@
             color: var(--secondary-text);
             width: 40px;
             text-align: right;
-            font-size: 1.1rem; /* Increased font size */
+            font-size: 1.1rem; 
         }
         
         .control-value {
@@ -164,7 +164,7 @@
             text-align: center;
             cursor: pointer;
             pointer-events: auto;
-            font-size: 1.1rem; /* Increased font size */
+            font-size: 1.1rem;
         }
         
         .control-value:hover {
@@ -183,8 +183,8 @@
         }
         
         .zoom-button {
-            width: 36px; /* Increased size */
-            height: 36px; /* Increased size */
+            width: 36px; 
+            height: 36px; 
             background-color: var(--control-bg);
             border-radius: 50%;
             display: flex;
@@ -192,7 +192,7 @@
             justify-content: center;
             color: var(--primary-text);
             font-weight: bold;
-            font-size: 20px; /* Increased font size */
+            font-size: 20px; 
             cursor: pointer;
             user-select: none;
             pointer-events: auto;
@@ -204,8 +204,8 @@
         
         /* Help and source buttons */
         .icon-button {
-            width: 46px; /* Increased size */
-            height: 46px; /* Increased size */
+            width: 46px;
+            height: 46px; 
             background-color: var(--overlay-bg);
             border-radius: 50%;
             display: flex;
@@ -223,11 +223,11 @@
         }
         
         .icon-button span {
-            font-size: 22px; /* Increased font size */
+            font-size: 22px; 
             font-weight: bold;
         }
         
-        /* Help panel - fixed width */
+        /* Help panel */
         .help-panel {
             position: absolute;
             top: 70px;
@@ -235,11 +235,11 @@
             background-color: var(--overlay-bg);
             padding: 20px;
             border-radius: 8px;
-            font-size: 16px; /* Increased font size */
+            font-size: 16px; 
             line-height: 1.5;
             z-index: 100;
             display: none;
-            width: 350px; /* Increased width for better readability */
+            width: 350px; 
             max-width: 90vw; /* Responsive for small screens */
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             pointer-events: auto;
@@ -252,14 +252,14 @@
         .help-panel h3 {
             margin-bottom: 12px;
             color: var(--accent-color);
-            font-size: 18px; /* Increased font size */
+            font-size: 18px; 
         }
         
         .help-panel p {
             margin-bottom: 15px;
             line-height: 1.5;
             word-wrap: break-word;
-            font-size: 16px; /* Increased font size */
+            font-size: 16px; 
         }
         
         .help-panel ul {
@@ -272,7 +272,7 @@
             margin-bottom: 8px;
             display: flex;
             align-items: flex-start;
-            font-size: 16px; /* Increased font size */
+            font-size: 16px; 
         }
         
         .help-panel .key {
@@ -282,9 +282,9 @@
             border-radius: 4px;
             margin-right: 8px;
             font-family: monospace;
-            min-width: 24px; /* Increased width */
+            min-width: 24px; 
             text-align: center;
-            font-size: 16px; /* Increased font size */
+            font-size: 16px;
         }
         
         /* Source selector modal */
@@ -319,7 +319,7 @@
         
         .modal-header h2 {
             color: var(--accent-color);
-            font-size: 22px; /* Increased font size */
+            font-size: 22px; 
         }
         
         .source-options {
@@ -338,7 +338,7 @@
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.2s;
-            font-size: 16px; /* Increased font size */
+            font-size: 16px; 
         }
         
         .source-option label:hover {
@@ -348,8 +348,8 @@
         .source-option input[type="radio"] {
             margin-right: 10px;
             cursor: pointer;
-            width: 18px; /* Increased size */
-            height: 18px; /* Increased size */
+            width: 18px; 
+            height: 18px; 
         }
         
         .modal-footer {
@@ -692,7 +692,7 @@
                     
                     <div class="source-option">
                         <label>
-                            <input type="radio" name="video-source" value="axis-camera">
+                            <input type="radio" name="video-source" value="ptz-camera">
                             PTZ Camera
                         </label>
                     </div>
@@ -855,11 +855,11 @@
                     
                     if (cameraIp && username && password) {
                         // Store credentials
-                        storeAxisCredentials(cameraIp, username, password);
+                        storePTZCredentials(cameraIp, username, password);
                         // Hide the dialog
                         credentialsDialog.style.display = 'none';
                         // Continue with camera connection
-                        connectToAxisCamera();
+                        connectToPTZCamera();
                     }
                 });
                 
@@ -1087,15 +1087,15 @@
                             });
                         break;
                         
-                    case 'axis-camera':
+                    case 'ptz-camera':
                         // First check if we already have credentials
-                        let credentials = getAxisCredentials();
+                        let credentials = getPTZCredentials();
                         
                         // If not, show the credentials dialog
                         if (!credentials) {
                             showCredentialsDialog();
                         } else {
-                            connectToAxisCamera();
+                            connectToPTZCamera();
                         }
                         break;
                 }
@@ -1113,19 +1113,19 @@
                 document.getElementById('camera-ip').focus();
             }
             
-            // Connect to AXIS camera with stored credentials
-            function connectToAxisCamera() {
-                const credentials = getAxisCredentials();
+            // Connect to PTZ camera with stored credentials
+            function connectToPTZCamera() {
+                const credentials = getPTZCredentials();
                 if (!credentials) {
                     console.error('No camera credentials available');
                     return;
                 }
                 
                 // Create an iframe to hold the stream
-                const axisFrame = document.createElement('iframe');
-                axisFrame.style.width = '100%';
-                axisFrame.style.height = '100%';
-                axisFrame.style.border = 'none';
+                const ptzFrame = document.createElement('iframe');
+                ptzFrame.style.width = '100%';
+                ptzFrame.style.height = '100%';
+                ptzFrame.style.border = 'none';
                 
                 // Set up the authentication and source
                 const streamUrl = `http://${credentials.cameraIp}/axis-cgi/mjpg/video.cgi`;
@@ -1139,11 +1139,11 @@
                 document.body.appendChild(authForm);
                 
                 // Name the iframe for the form target
-                axisFrame.name = 'camera-stream-frame';
+                ptzFrame.name = 'camera-stream-frame';
                 
                 // Add the iframe to the container
                 videoStream.innerHTML = '';
-                videoStream.appendChild(axisFrame);
+                videoStream.appendChild(ptzFrame);
                 
                 // Submit the form to load the authenticated stream
                 authForm.submit();
@@ -1154,20 +1154,20 @@
                 }, 1000);
                 
                 // Hide placeholder once frame is loaded
-                axisFrame.onload = () => {
+                ptzFrame.onload = () => {
                     placeholderImage.style.display = 'none';
                 };
                 
                 // Handle loading errors
-                axisFrame.onerror = () => {
-                    console.error('Error loading AXIS camera stream');
-                    alert('Could not connect to AXIS camera. Please check credentials or network connection.');
+                ptzFrame.onerror = () => {
+                    console.error('Error loading PTZ camera stream');
+                    alert('Could not connect to PTZ camera. Please check credentials or network connection.');
                     document.querySelector('input[value="placeholder"]').checked = true;
                     placeholderImage.style.display = 'block';
                     
                     // Clear potentially invalid credentials
-                    sessionStorage.removeItem('axisCamera');
-                    sessionStorage.removeItem('axisCameraAuth');
+                    sessionStorage.removeItem('ptzCamera');
+                    sessionStorage.removeItem('ptzCameraAuth');
                 };
             }
             
@@ -1573,19 +1573,19 @@
                 // Log command for debugging
                 console.log(`PTZ Command: Pan=${ptzState.pan.toFixed(1)}°, Tilt=${ptzState.tilt.toFixed(1)}°, Zoom=${ptzState.zoom.toFixed(1)}x`);
                 
-                // Check if we're using the AXIS camera source
+                // Check if we're using the PTZ camera source
                 const selectedSource = document.querySelector('input[name="video-source"]:checked');
-                if (selectedSource && selectedSource.value === 'axis-camera') {
+                if (selectedSource && selectedSource.value === 'ptz-camera') {
                     // Get credentials
-                    const credentials = getAxisCredentials();
+                    const credentials = getPTZCredentials();
                     if (!credentials) {
                         console.error('No camera credentials available');
                         ptzState.commandInProgress = false;
                         return;
                     }
                     
-                    // Construct the PTZ control URL
-                    const axisPtzUrl = `http://${credentials.cameraIp}/axis-cgi/com/ptz.cgi`;
+                    // Construct the PTZ control URL (using compatible API path)
+                    const ptzUrl = `http://${credentials.cameraIp}/axis-cgi/com/ptz.cgi`;
                     
                     // Create the parameters
                     const params = new URLSearchParams({
@@ -1596,11 +1596,12 @@
                     });
                     
                     // Create a temporary image to make an authenticated request
+                    // This is a common technique for making an authenticated request
                     // This is a common technique for making authenticated requests without CORS issues
                     const authImg = new Image();
                     
                     // Set authentication in the URL
-                    authImg.src = `${axisPtzUrl}?${params.toString()}&dummy=${Date.now()}`;
+                    authImg.src = `${ptzUrl}?${params.toString()}&dummy=${Date.now()}`;
                     
                     // Clean up the image after loading (or error)
                     authImg.onload = authImg.onerror = function() {
@@ -1614,7 +1615,7 @@
                     authImg.style.display = 'none';
                     document.body.appendChild(authImg);
                 } else {
-                    // For non-axis sources, just apply visual feedback
+                    // For non-ptz sources, just apply visual feedback
                     
                     // Apply visual feedback (now correctly applying both pan and tilt)
                     const translateX = -ptzState.pan / 2;
@@ -1632,25 +1633,25 @@
             }
 
             // Store camera credentials
-            function storeAxisCredentials(cameraIp, username, password) {
+            function storePTZCredentials(cameraIp, username, password) {
                 // Store in sessionStorage (cleared when tab closes)
-                sessionStorage.setItem('axisCamera', JSON.stringify({
+                sessionStorage.setItem('ptzCamera', JSON.stringify({
                     cameraIp,
                     timestamp: Date.now() // Add timestamp for potential expiration
                 }));
                 
                 // Store credentials separately with limited lifetime
                 const encodedAuth = btoa(`${username}:${password}`);
-                sessionStorage.setItem('axisCameraAuth', encodedAuth);
+                sessionStorage.setItem('ptzCameraAuth', encodedAuth);
                 
                 return true;
             }
 
             // Function to get stored credentials
-            function getAxisCredentials() {
+            function getPTZCredentials() {
                 try {
-                    const cameraData = JSON.parse(sessionStorage.getItem('axisCamera') || '{}');
-                    const authToken = sessionStorage.getItem('axisCameraAuth');
+                    const cameraData = JSON.parse(sessionStorage.getItem('ptzCamera') || '{}');
+                    const authToken = sessionStorage.getItem('ptzCameraAuth');
                     
                     if (!cameraData.cameraIp || !authToken) {
                         return null;
@@ -1660,8 +1661,8 @@
                     const now = Date.now();
                     if (now - cameraData.timestamp > 3600000) { // 1 hour expiration
                         // Clear expired credentials
-                        sessionStorage.removeItem('axisCamera');
-                        sessionStorage.removeItem('axisCameraAuth');
+                        sessionStorage.removeItem('ptzCamera');
+                        sessionStorage.removeItem('ptzCameraAuth');
                         return null;
                     }
                     
