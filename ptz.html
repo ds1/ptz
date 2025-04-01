@@ -80,7 +80,24 @@
             width: 100%;
             height: 100%;
             z-index: 50;
-            cursor: move; /* Show a move cursor to indicate interactivity */
+            cursor: move; /* Default cursor */
+        }
+        
+        /* Custom cursors */
+        .cursor-pan-only {
+            cursor: ew-resize; /* Horizontal resize cursor for pan-only mode */
+        }
+        
+        .cursor-tilt-only {
+            cursor: ns-resize; /* Vertical resize cursor for tilt-only mode */
+        }
+        
+        .cursor-zoom-in {
+            cursor: zoom-in; /* Zoom in cursor */
+        }
+        
+        .cursor-zoom-out {
+            cursor: zoom-out; /* Zoom out cursor */
         }
         
         /* Control panels and overlays */
@@ -587,6 +604,10 @@
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
+                    <div class="setting-help-text" id="invert-tilt-help">
+                        Moving mouse up tilts camera down.<br>
+                        Moving mouse down tilts camera up.
+                    </div>
                     
                     <!-- Axis Lock Mode setting -->
                     <div class="setting-item">
@@ -718,7 +739,10 @@
             invertTilt: false,
             axisLockMode: true,
             // Track which button is being used for axis lock mode
-            activeDragButton: null // 0 for left-click (pan), 2 for right-click (tilt)
+            activeDragButton: null, // 0 for left-click (pan), 2 for right-click (tilt)
+            // Temporary flag for zoom direction (for cursor)
+            zoomingIn: false,
+            zoomingOut: false
         };
         
         // Mouse state variables
@@ -751,6 +775,7 @@
             
             // Toggle elements for settings
             const invertTiltToggle = document.getElementById('invert-tilt-toggle');
+            const invertTiltHelp = document.getElementById('invert-tilt-help');
             const axisLockToggle = document.getElementById('axis-lock-toggle');
             const axisLockHelp = document.getElementById('axis-lock-help');
             
@@ -775,7 +800,7 @@
                     return false;
                 });
                 
-// Touch events for interaction layer
+                // Touch events for interaction layer
                 mouseInteractionLayer.addEventListener('touchstart', handleTouchStart);
                 document.addEventListener('touchmove', handleTouchMove);
                 document.addEventListener('touchend', handleTouchEnd);
@@ -849,15 +874,64 @@
                 // Settings toggle handlers
                 invertTiltToggle.addEventListener('change', function() {
                     ptzState.invertTilt = this.checked;
+                    updateInvertTiltHelp();
                 });
                 
                 axisLockToggle.addEventListener('change', function() {
                     ptzState.axisLockMode = this.checked;
                     axisLockHelp.style.display = this.checked ? 'block' : 'none';
+                    // Reset cursor
+                    mouseInteractionLayer.className = 'mouse-interaction-layer';
+                    
+                    // Reset active button if turning axis lock on
+                    if (this.checked) {
+                        if (isLeftDragging) {
+                            ptzState.activeDragButton = 0;
+                            mouseInteractionLayer.classList.add('cursor-pan-only');
+                        } else if (isRightDragging) {
+                            ptzState.activeDragButton = 2;
+                            mouseInteractionLayer.classList.add('cursor-tilt-only');
+                        }
+                    }
                 });
                 
-                // Initialize axis lock help visibility
+                // Initialize help text visibility
                 axisLockHelp.style.display = ptzState.axisLockMode ? 'block' : 'none';
+                updateInvertTiltHelp();
+                
+                // Initialize cursor
+                updateCursor();
+            }
+            
+            // Update help text for inverted tilt based on current setting
+            function updateInvertTiltHelp() {
+                if (ptzState.invertTilt) {
+                    invertTiltHelp.innerHTML = 'Moving mouse up tilts camera down.<br>Moving mouse down tilts camera up.';
+                } else {
+                    invertTiltHelp.innerHTML = 'Moving mouse up tilts camera up.<br>Moving mouse down tilts camera down.';
+                }
+                invertTiltHelp.style.display = 'block';
+            }
+            
+            // Update cursor based on current interaction
+            function updateCursor() {
+                // Remove all cursor classes first
+                mouseInteractionLayer.classList.remove('cursor-pan-only', 'cursor-tilt-only', 'cursor-zoom-in', 'cursor-zoom-out');
+                
+                if (ptzState.zoomingIn) {
+                    mouseInteractionLayer.classList.add('cursor-zoom-in');
+                } else if (ptzState.zoomingOut) {
+                    mouseInteractionLayer.classList.add('cursor-zoom-out');
+                } else if (ptzState.axisLockMode) {
+                    if (ptzState.activeDragButton === 0) {  // Left click for pan
+                        mouseInteractionLayer.classList.add('cursor-pan-only');
+                    } else if (ptzState.activeDragButton === 2) {  // Right click for tilt
+                        mouseInteractionLayer.classList.add('cursor-tilt-only');
+                    }
+                } else {
+                    // Default cursor (move)
+                    mouseInteractionLayer.classList.remove('cursor-pan-only', 'cursor-tilt-only');
+                }
             }
             
             // Start editing a value
@@ -1092,50 +1166,46 @@
                         ptzState.activeDragButton = 2; // Right click = tilt only
                     }
                 }
+                
+                // Update cursor based on active button
+                updateCursor();
             }
             
             function handleMouseMove(e) {
                 if ((!isLeftDragging && !isRightDragging) || currentlyEditing) return;
                 
-                // Calculate the relative position in the viewport (0 to 1)
-                const viewportWidth = window.innerWidth;
-                const viewportHeight = window.innerHeight;
+                // Calculate movement deltas
+                const deltaX = e.clientX - ptzState.lastMouseX;
+                const deltaY = e.clientY - ptzState.lastMouseY;
                 
-                // Map position to pan/tilt values proportionally
-                // For pan: left (0) = -180, right (1) = 180
-                // For tilt: top (0) = -90, bottom (1) = 90
-                const xPos = e.clientX / viewportWidth;
-                const yPos = e.clientY / viewportHeight;
+                // Store new mouse position
+                ptzState.lastMouseX = e.clientX;
+                ptzState.lastMouseY = e.clientY;
                 
-                // Calculate new pan/tilt values based on position
-                // We invert the Y axis since screen coordinates start at the top
-                const newPan = (xPos * 2 - 1) * 180; // Map 0-1 to -180-180
-                const newTilt = (yPos * 2 - 1) * 90;  // Map 0-1 to -90-90
+                // Movement sensitivity (adjust as needed)
+                const sensitivity = 0.2;
                 
-                // Apply smoothing/sensitivity reduction (adjust these values to change sensitivity)
-                const sensitivity = 0.05; // Lower = less sensitive
-                
-                // Check if we're in axis lock mode
+                // Apply movement based on current mode
                 if (ptzState.axisLockMode) {
-                    if (ptzState.activeDragButton === 0) { // Left-click = pan only
-                        ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
-                    } else if (ptzState.activeDragButton === 2) { // Right-click = tilt only
+                    if (ptzState.activeDragButton === 0) { // Left click = pan only
+                        ptzState.pan += deltaX * sensitivity;
+                    } else if (ptzState.activeDragButton === 2) { // Right click = tilt only
                         // Apply tilt inversion if enabled
                         if (ptzState.invertTilt) {
-                            ptzState.tilt = ptzState.tilt - (newTilt - ptzState.tilt) * sensitivity;
+                            ptzState.tilt -= deltaY * sensitivity;
                         } else {
-                            ptzState.tilt = ptzState.tilt + (newTilt - ptzState.tilt) * sensitivity;
+                            ptzState.tilt += deltaY * sensitivity;
                         }
                     }
                 } else {
                     // Normal mode (both axes at once)
-                    ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
+                    ptzState.pan += deltaX * sensitivity;
                     
                     // Apply tilt inversion if enabled
                     if (ptzState.invertTilt) {
-                        ptzState.tilt = ptzState.tilt - (newTilt - ptzState.tilt) * sensitivity;
+                        ptzState.tilt -= deltaY * sensitivity;
                     } else {
-                        ptzState.tilt = ptzState.tilt + (newTilt - ptzState.tilt) * sensitivity;
+                        ptzState.tilt += deltaY * sensitivity;
                     }
                 }
                 
@@ -1160,6 +1230,10 @@
                 // If no button is being pressed anymore
                 if (!isLeftDragging && !isRightDragging) {
                     ptzState.activeDragButton = null;
+                    
+                    // Reset cursor
+                    updateCursor();
+                    
                     // Send a final command to ensure the position is set
                     sendCameraCommand();
                 }
@@ -1173,7 +1247,23 @@
                 
                 // Determine scroll direction
                 const delta = e.deltaY < 0 ? 0.5 : -0.5;
+                
+                // Set zoom direction flag for cursor
+                ptzState.zoomingIn = delta > 0;
+                ptzState.zoomingOut = delta < 0;
+                
+                // Update cursor
+                updateCursor();
+                
+                // Apply zoom
                 changeZoom(delta);
+                
+                // Reset zoom cursor after a short delay
+                setTimeout(() => {
+                    ptzState.zoomingIn = false;
+                    ptzState.zoomingOut = false;
+                    updateCursor();
+                }, 300);
             }
             
             // Touch event handlers
@@ -1192,6 +1282,9 @@
                     if (ptzState.axisLockMode) {
                         ptzState.activeDragButton = 0; // Simulate left click = pan only
                     }
+                    
+                    // Update cursor
+                    updateCursor();
                 } else if (e.touches.length === 2) {
                     // Two finger touch for zoom (pinch)
                     const touch1 = e.touches[0];
@@ -1209,35 +1302,31 @@
                 e.preventDefault();
                 
                 if (isLeftDragging && e.touches.length === 1) {
-                    // Calculate the relative position in the viewport (0 to 1)
-                    const viewportWidth = window.innerWidth;
-                    const viewportHeight = window.innerHeight;
+                    // Calculate movement deltas
+                    const deltaX = e.touches[0].clientX - ptzState.lastMouseX;
+                    const deltaY = e.touches[0].clientY - ptzState.lastMouseY;
                     
-                    // Map position to pan/tilt values proportionally
-                    const xPos = e.touches[0].clientX / viewportWidth;
-                    const yPos = e.touches[0].clientY / viewportHeight;
+                    // Store new touch position
+                    ptzState.lastMouseX = e.touches[0].clientX;
+                    ptzState.lastMouseY = e.touches[0].clientY;
                     
-                    // Calculate new pan/tilt values based on position
-                    const newPan = (xPos * 2 - 1) * 180; // Map 0-1 to -180-180
-                    const newTilt = (yPos * 2 - 1) * 90;  // Map 0-1 to -90-90
+                    // Movement sensitivity
+                    const sensitivity = 0.2;
                     
-                    // Apply smoothing/sensitivity reduction
-                    const sensitivity = 0.05; // Lower = less sensitive
-                    
-                    // Check if we're in axis lock mode
+                    // Apply movement based on current mode
                     if (ptzState.axisLockMode) {
                         if (ptzState.activeDragButton === 0) { // Default to pan on touch
-                            ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
+                            ptzState.pan += deltaX * sensitivity;
                         }
                     } else {
                         // Normal mode (both axes at once)
-                        ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
+                        ptzState.pan += deltaX * sensitivity;
                         
                         // Apply tilt inversion if enabled
                         if (ptzState.invertTilt) {
-                            ptzState.tilt = ptzState.tilt - (newTilt - ptzState.tilt) * sensitivity;
+                            ptzState.tilt -= deltaY * sensitivity;
                         } else {
-                            ptzState.tilt = ptzState.tilt + (newTilt - ptzState.tilt) * sensitivity;
+                            ptzState.tilt += deltaY * sensitivity;
                         }
                     }
                     
@@ -1261,6 +1350,12 @@
                     
                     // Calculate zoom delta based on pinch movement
                     const zoomDelta = (currentDistance - ptzState.lastTouchDistance) * 0.01;
+                    
+                    // Set zoom direction flag for visual feedback
+                    ptzState.zoomingIn = zoomDelta > 0;
+                    ptzState.zoomingOut = zoomDelta < 0;
+                    
+                    // Apply zoom
                     changeZoom(zoomDelta);
                     
                     ptzState.lastTouchDistance = currentDistance;
@@ -1271,9 +1366,17 @@
                 if (isLeftDragging) {
                     isLeftDragging = false;
                     ptzState.activeDragButton = null;
+                    
+                    // Reset cursor
+                    updateCursor();
+                    
                     // Send a final command to ensure the position is set
                     sendCameraCommand();
                 }
+                
+                // Reset zoom flags
+                ptzState.zoomingIn = false;
+                ptzState.zoomingOut = false;
             }
             
             // Throttle function to limit how often commands are sent
@@ -1310,11 +1413,23 @@
                             break;
                         case '+':
                         case '=':
+                            ptzState.zoomingIn = true;
+                            updateCursor();
                             changeZoom(0.5);
+                            setTimeout(() => {
+                                ptzState.zoomingIn = false;
+                                updateCursor();
+                            }, 300);
                             break;
                         case '-':
                         case '_':
+                            ptzState.zoomingOut = true;
+                            updateCursor();
                             changeZoom(-0.5);
+                            setTimeout(() => {
+                                ptzState.zoomingOut = false;
+                                updateCursor();
+                            }, 300);
                             break;
                     }
                     
@@ -1459,7 +1574,7 @@
                 } else {
                     // For non-axis sources, just apply visual feedback
                     
-                    // Apply visual feedback
+                    // Apply visual feedback (now correctly applying both pan and tilt)
                     const translateX = -ptzState.pan / 2;
                     const translateY = ptzState.tilt / 2;
                     const scale = ptzState.zoom;
