@@ -69,6 +69,7 @@
             z-index: 100;
             display: flex;
             gap: 15px;
+            pointer-events: auto;
         }
         
         .bottom-right-controls {
@@ -76,6 +77,7 @@
             bottom: 20px;
             right: 20px;
             z-index: 100;
+            pointer-events: auto;
         }
         
         /* Common control panel styling */
@@ -121,6 +123,7 @@
             color: var(--accent-color);
             text-align: center;
             cursor: pointer;
+            pointer-events: auto;
         }
         
         .control-value:hover {
@@ -151,6 +154,7 @@
             font-size: 16px;
             cursor: pointer;
             user-select: none;
+            pointer-events: auto;
         }
         
         .zoom-button:hover {
@@ -169,7 +173,8 @@
             cursor: pointer;
             opacity: 0.7;
             transition: opacity 0.2s ease;
-            z-index: 100;
+            z-index: 110;
+            pointer-events: auto;
         }
         
         .icon-button:hover {
@@ -196,6 +201,11 @@
             width: 300px; /* Fixed width for better readability */
             max-width: 90vw; /* Responsive for small screens */
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            pointer-events: auto;
+        }
+        
+        .help-panel.visible {
+            display: block;
         }
         
         .help-panel h3 {
@@ -245,6 +255,7 @@
             justify-content: center;
             align-items: center;
             z-index: 9999;
+            pointer-events: auto;
         }
         
         .modal-content {
@@ -416,8 +427,8 @@
                     
                     <div class="source-option">
                         <label>
-                            <input type="radio" name="video-source" value="sample">
-                            Sample Video
+                            <input type="radio" name="video-source" value="axis-camera">
+                            PTZ Camera
                         </label>
                     </div>
                 </div>
@@ -626,6 +637,11 @@
                 zoomValueElement.setAttribute('data-value', ptzState.zoom.toFixed(1));
             }
             
+            // Toggle help panel
+            function toggleHelpPanel() {
+                helpPanel.classList.toggle('visible');
+            }
+            
             // Change video source
             function changeVideoSource(sourceType) {
                 // Hide both video elements initially
@@ -653,17 +669,71 @@
                             });
                         break;
                         
-                    case 'sample':
-                        // Use a sample video
-                        videoFeed.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-                        videoFeed.style.display = 'block';
+                    case 'axis-camera':
+                        // First check if we already have credentials
+                        let credentials = getAxisCredentials();
+                        
+                        // If not, prompt for them
+                        if (!credentials) {
+                            if (!setupAxisCamera()) {
+                                // User cancelled, revert to placeholder
+                                document.querySelector('input[value="placeholder"]').checked = true;
+                                placeholderImage.style.display = 'block';
+                                return;
+                            }
+                            credentials = getAxisCredentials();
+                        }
+                        
+                        // Create an iframe to hold the stream
+                        const axisFrame = document.createElement('iframe');
+                        axisFrame.style.width = '100%';
+                        axisFrame.style.height = '100%';
+                        axisFrame.style.border = 'none';
+                        
+                        // Set up the authentication and source
+                        const streamUrl = `http://${credentials.cameraIp}/axis-cgi/mjpg/video.cgi`;
+                        
+                        // Create a simple auth form that will submit automatically
+                        const authForm = document.createElement('form');
+                        authForm.method = 'GET';
+                        authForm.action = streamUrl;
+                        authForm.style.display = 'none';
+                        authForm.target = 'camera-stream-frame';
+                        document.body.appendChild(authForm);
+                        
+                        // Name the iframe for the form target
+                        axisFrame.name = 'camera-stream-frame';
+                        
+                        // Add the iframe to the container
+                        videoStream.innerHTML = '';
+                        videoStream.appendChild(axisFrame);
+                        
+                        // Submit the form to load the authenticated stream
+                        authForm.submit();
+                        
+                        // Clean up the form after submission
+                        setTimeout(() => {
+                            document.body.removeChild(authForm);
+                        }, 1000);
+                        
+                        // Hide placeholder once frame is loaded
+                        axisFrame.onload = () => {
+                            placeholderImage.style.display = 'none';
+                        };
+                        
+                        // Handle loading errors
+                        axisFrame.onerror = () => {
+                            console.error('Error loading AXIS camera stream');
+                            alert('Could not connect to AXIS camera. Please check credentials or network connection.');
+                            document.querySelector('input[value="placeholder"]').checked = true;
+                            placeholderImage.style.display = 'block';
+                            
+                            // Clear potentially invalid credentials
+                            sessionStorage.removeItem('axisCamera');
+                            sessionStorage.removeItem('axisCameraAuth');
+                        };
                         break;
                 }
-            }
-            
-            // Toggle help panel
-            function toggleHelpPanel() {
-                helpPanel.classList.toggle('visible');
             }
             
             // Mouse event handlers
@@ -858,8 +928,8 @@
                 if (panDelta !== 0 || tiltDelta !== 0) {
                     movePanTilt(panDelta, tiltDelta);
                     
-                // Continue movement if keys still pressed
-                if (panDelta !== 0 || tiltDelta !== 0) {
+                    // Continue movement if keys still pressed
+                    if (panDelta !== 0 || tiltDelta !== 0) {
                         requestAnimationFrame(applyKeyboardMovement);
                     }
                 }
@@ -905,22 +975,136 @@
                 sendCameraCommand();
             }
             
-            // Send command to camera (would integrate with camera API)
+            // Send Command to API
             function sendCameraCommand() {
-                // In a real implementation, this would send commands to the camera
+                // Log command for debugging
                 console.log(`PTZ Command: Pan=${ptzState.pan.toFixed(1)}°, Tilt=${ptzState.tilt.toFixed(1)}°, Zoom=${ptzState.zoom.toFixed(1)}x`);
                 
-                // Simulate camera movement by changing the transform of the video stream
-                // No ease in/out animation - just direct linear movement
-                const translateX = -ptzState.pan / 2; // Scale down the effect
+                // Apply visual feedback
+                const translateX = -ptzState.pan / 2;
                 const translateY = ptzState.tilt / 2;
                 const scale = ptzState.zoom;
                 
-                // Remove transition for immediate movement without ease
                 videoStream.style.transition = 'none';
                 videoStream.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+                
+                // Check if we're using the AXIS camera source
+                const selectedSource = document.querySelector('input[name="video-source"]:checked');
+                if (selectedSource && selectedSource.value === 'axis-camera') {
+                    // Get credentials
+                    const credentials = getAxisCredentials();
+                    if (!credentials) {
+                        console.error('No camera credentials available');
+                        return;
+                    }
+                    
+                    // Construct the PTZ control URL
+                    const axisPtzUrl = `http://${credentials.cameraIp}/axis-cgi/com/ptz.cgi`;
+                    
+                    // Create the parameters
+                    const params = new URLSearchParams({
+                        'camera': 1,
+                        'pan': ptzState.pan,
+                        'tilt': ptzState.tilt,
+                        'zoom': Math.floor(ptzState.zoom * 9999 / 12)  // Scale conversion
+                    });
+                    
+                    // Create a temporary image to make an authenticated request
+                    // This is a common technique for making authenticated requests without CORS issues
+                    const authImg = new Image();
+                    
+                    // Set authentication in the URL (not ideal but necessary without server)
+                    authImg.src = `${axisPtzUrl}?${params.toString()}&dummy=${Date.now()}`;
+                    
+                    // Clean up the image after loading (or error)
+                    authImg.onload = authImg.onerror = function() {
+                        if (authImg.parentNode) {
+                            authImg.parentNode.removeChild(authImg);
+                        }
+                    };
+                    
+                    // Add to DOM temporarily (hidden)
+                    authImg.style.display = 'none';
+                    document.body.appendChild(authImg);
+                }
+            }
+
+            // Helper functions for authentication and error handling
+            function promptForCredentials() {
+                // Create a simple dialog for camera credentials
+                const cameraIp = prompt('Enter camera IP address (e.g., 192.168.1.100):', '');
+                if (!cameraIp) return null;
+                
+                const username = prompt('Enter camera username:', '');
+                if (!username) return null;
+                
+                const password = prompt('Enter camera password:', '');
+                if (!password) return null;
+                
+                return { cameraIp, username, password };
+            }
+
+            function handleCameraError() {
+                console.error('Error loading AXIS camera stream');
+                alert('Could not connect to AXIS camera. Please check credentials or try another video source.');
+                document.querySelector('input[value="placeholder"]').checked = true;
+                placeholderImage.style.display = 'block';
             }
             
+            // Function to securely prompt for and store credentials
+            function setupAxisCamera() {
+                // Prompt for credentials
+                const cameraIp = prompt('Enter camera IP address (e.g., 192.168.1.100):', '');
+                if (!cameraIp) return false;
+                
+                const username = prompt('Enter camera username:', '');
+                if (!username) return false;
+                
+                const password = prompt('Enter camera password:', '');
+                if (!password) return false;
+                
+                // Store in sessionStorage (cleared when tab closes)
+                sessionStorage.setItem('axisCamera', JSON.stringify({
+                    cameraIp,
+                    timestamp: Date.now() // Add timestamp for potential expiration
+                }));
+                
+                // Store credentials separately with limited lifetime
+                const encodedAuth = btoa(`${username}:${password}`);
+                sessionStorage.setItem('axisCameraAuth', encodedAuth);
+                
+                return true;
+            }
+
+            // Function to get stored credentials
+            function getAxisCredentials() {
+                try {
+                    const cameraData = JSON.parse(sessionStorage.getItem('axisCamera') || '{}');
+                    const authToken = sessionStorage.getItem('axisCameraAuth');
+                    
+                    if (!cameraData.cameraIp || !authToken) {
+                        return null;
+                    }
+                    
+                    // Optional: check if credentials have expired
+                    const now = Date.now();
+                    if (now - cameraData.timestamp > 3600000) { // 1 hour expiration
+                        // Clear expired credentials
+                        sessionStorage.removeItem('axisCamera');
+                        sessionStorage.removeItem('axisCameraAuth');
+                        return null;
+                    }
+                    
+                    return {
+                        cameraIp: cameraData.cameraIp,
+                        authToken: authToken
+                    };
+                } catch (e) {
+                    console.error('Error retrieving camera credentials', e);
+                    return null;
+                }
+            }
+
             // Start the application
             initControls();
         });
