@@ -1173,6 +1173,9 @@
             
             function handleMouseMove(e) {
                 if ((!isLeftDragging && !isRightDragging) || currentlyEditing) return;
+
+                // Ensure cursor stays correct during drag operation
+                updateCursor();
                 
                 // Calculate movement deltas
                 const deltaX = e.clientX - ptzState.lastMouseX;
