@@ -941,20 +941,24 @@
                 );
                 
                 if (ptzState.zoomingIn) {
+                    document.body.style.cursor = 'zoom-in';
                     mouseInteractionLayer.classList.add('force-cursor-zoom-in');
                 } else if (ptzState.zoomingOut) {
+                    document.body.style.cursor = 'zoom-out';
                     mouseInteractionLayer.classList.add('force-cursor-zoom-out');
                 } else if (ptzState.axisLockMode) {
                     if (isLeftDragging || ptzState.activeDragButton === 0) {
+                        document.body.style.cursor = 'ew-resize';
                         mouseInteractionLayer.classList.add('force-cursor-pan-only');
                     } else if (isRightDragging || ptzState.activeDragButton === 2) {
+                        document.body.style.cursor = 'ns-resize';
                         mouseInteractionLayer.classList.add('force-cursor-tilt-only');
                     } else {
-                        // Default hover state in axis lock mode
-                        mouseInteractionLayer.classList.add('cursor-move');
+                        document.body.style.cursor = 'default';
                     }
+                } else {
+                    document.body.style.cursor = 'default';
                 }
-                // Default cursor (move) is already set in CSS
             }
             
             // Start editing a value
@@ -1182,16 +1186,16 @@
                     isLeftDragging = true;
                     if (ptzState.axisLockMode) {
                         ptzState.activeDragButton = 0; // Left click = pan only
-                        // Force cursor update immediately
-                        mouseInteractionLayer.classList.remove('cursor-pan-only', 'cursor-tilt-only', 'cursor-move');
+                        document.body.style.cursor = 'ew-resize';
                         mouseInteractionLayer.classList.add('force-cursor-pan-only');
+                    } else {
+                        document.body.style.cursor = 'move';
                     }
                 } else if (e.button === 2) { // Right mouse button
                     isRightDragging = true;
                     if (ptzState.axisLockMode) {
                         ptzState.activeDragButton = 2; // Right click = tilt only
-                        // Force cursor update immediately
-                        mouseInteractionLayer.classList.remove('cursor-pan-only', 'cursor-tilt-only', 'cursor-move');
+                        document.body.style.cursor = 'ns-resize';
                         mouseInteractionLayer.classList.add('force-cursor-tilt-only');
                     }
                 }
@@ -1259,7 +1263,8 @@
                 if (!isLeftDragging && !isRightDragging) {
                     ptzState.activeDragButton = null;
                     
-                    // Reset cursor - remove forced cursor styles
+                    // Reset cursor styles
+                    document.body.style.cursor = 'default';
                     mouseInteractionLayer.classList.remove(
                         'force-cursor-pan-only', 'force-cursor-tilt-only',
                         'force-cursor-zoom-in', 'force-cursor-zoom-out'
@@ -1283,7 +1288,12 @@
                 ptzState.zoomingIn = delta > 0;
                 ptzState.zoomingOut = delta < 0;
                 
-                // Update cursor
+                // Update cursor - important to set document.body.style.cursor
+                if (ptzState.zoomingIn) {
+                    document.body.style.cursor = 'zoom-in';
+                } else if (ptzState.zoomingOut) {
+                    document.body.style.cursor = 'zoom-out';
+                }
                 updateCursor();
                 
                 // Apply zoom
@@ -1293,6 +1303,7 @@
                 setTimeout(() => {
                     ptzState.zoomingIn = false;
                     ptzState.zoomingOut = false;
+                    document.body.style.cursor = 'default';
                     updateCursor();
                 }, 300);
             }
