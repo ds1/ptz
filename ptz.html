@@ -11,9 +11,10 @@
             --secondary-bg: #1e1e1e;
             --primary-text: #e0e0e0;
             --secondary-text: #a0a0a0;
-            --accent-color: #00b3ff;
+            --accent-color: #F79837; /* Changed from #00b3ff to #F79837 (orange) */
             --control-bg: rgba(40, 40, 40, 0.7);
             --overlay-bg: rgba(0, 0, 0, 0.5);
+            --font-size-base: 16px; /* Increased base font size */
         }
         
         * {
@@ -29,6 +30,7 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
+            font-size: var(--font-size-base); /* Base font size increased */
         }
         
         /* Main video container */
@@ -131,6 +133,7 @@
             color: var(--secondary-text);
             width: 40px;
             text-align: right;
+            font-size: 1.1rem; /* Increased font size */
         }
         
         .control-value {
@@ -144,6 +147,7 @@
             text-align: center;
             cursor: pointer;
             pointer-events: auto;
+            font-size: 1.1rem; /* Increased font size */
         }
         
         .control-value:hover {
@@ -162,8 +166,8 @@
         }
         
         .zoom-button {
-            width: 30px;
-            height: 30px;
+            width: 36px; /* Increased size */
+            height: 36px; /* Increased size */
             background-color: var(--control-bg);
             border-radius: 50%;
             display: flex;
@@ -171,7 +175,7 @@
             justify-content: center;
             color: var(--primary-text);
             font-weight: bold;
-            font-size: 16px;
+            font-size: 20px; /* Increased font size */
             cursor: pointer;
             user-select: none;
             pointer-events: auto;
@@ -183,8 +187,8 @@
         
         /* Help and source buttons */
         .icon-button {
-            width: 40px;
-            height: 40px;
+            width: 46px; /* Increased size */
+            height: 46px; /* Increased size */
             background-color: var(--overlay-bg);
             border-radius: 50%;
             display: flex;
@@ -202,7 +206,7 @@
         }
         
         .icon-button span {
-            font-size: 18px;
+            font-size: 22px; /* Increased font size */
             font-weight: bold;
         }
         
@@ -214,11 +218,11 @@
             background-color: var(--overlay-bg);
             padding: 20px;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 16px; /* Increased font size */
             line-height: 1.5;
             z-index: 100;
             display: none;
-            width: 300px; /* Fixed width for better readability */
+            width: 350px; /* Increased width for better readability */
             max-width: 90vw; /* Responsive for small screens */
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             pointer-events: auto;
@@ -231,13 +235,14 @@
         .help-panel h3 {
             margin-bottom: 12px;
             color: var(--accent-color);
-            font-size: 16px;
+            font-size: 18px; /* Increased font size */
         }
         
         .help-panel p {
             margin-bottom: 15px;
             line-height: 1.5;
             word-wrap: break-word;
+            font-size: 16px; /* Increased font size */
         }
         
         .help-panel ul {
@@ -250,6 +255,7 @@
             margin-bottom: 8px;
             display: flex;
             align-items: flex-start;
+            font-size: 16px; /* Increased font size */
         }
         
         .help-panel .key {
@@ -259,8 +265,9 @@
             border-radius: 4px;
             margin-right: 8px;
             font-family: monospace;
-            min-width: 20px;
+            min-width: 24px; /* Increased width */
             text-align: center;
+            font-size: 16px; /* Increased font size */
         }
         
         /* Source selector modal */
@@ -295,7 +302,7 @@
         
         .modal-header h2 {
             color: var(--accent-color);
-            font-size: 20px;
+            font-size: 22px; /* Increased font size */
         }
         
         .source-options {
@@ -314,6 +321,7 @@
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.2s;
+            font-size: 16px; /* Increased font size */
         }
         
         .source-option label:hover {
@@ -323,6 +331,8 @@
         .source-option input[type="radio"] {
             margin-right: 10px;
             cursor: pointer;
+            width: 18px; /* Increased size */
+            height: 18px; /* Increased size */
         }
         
         .modal-footer {
@@ -339,10 +349,11 @@
             font-weight: bold;
             cursor: pointer;
             transition: background-color 0.2s;
+            font-size: 16px; /* Increased font size */
         }
         
         .modal-button:hover {
-            background-color: #00c3ff;
+            background-color: #ffa857; /* Lighter orange on hover */
         }
         
         /* Custom dialog styling */
@@ -375,7 +386,7 @@
         
         .dialog-header h2 {
             color: var(--accent-color);
-            font-size: 20px;
+            font-size: 22px; /* Increased font size */
         }
         
         .form-group {
@@ -386,15 +397,17 @@
             display: block;
             margin-bottom: 5px;
             color: var(--primary-text);
+            font-size: 16px; /* Increased font size */
         }
         
         .form-control {
             width: 100%;
-            padding: 10px;
+            padding: 12px; /* Increased padding */
             border-radius: 4px;
             background-color: var(--control-bg);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--primary-text);
+            font-size: 16px; /* Increased font size */
         }
         
         .dialog-footer {
@@ -405,11 +418,12 @@
         }
         
         .dialog-button {
-            padding: 8px 20px;
+            padding: 10px 22px; /* Increased padding */
             border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
             border: none;
+            font-size: 16px; /* Increased font size */
         }
         
         .button-cancel {
@@ -424,9 +438,92 @@
         
         /* Camera icon for source button */
         .camera-icon {
-            width: 20px;
-            height: 20px;
+            width: 24px; /* Increased size */
+            height: 24px; /* Increased size */
             fill: var(--primary-text);
+        }
+        
+        /* Gear icon for settings button */
+        .gear-icon {
+            width: 24px; /* Increased size */
+            height: 24px; /* Increased size */
+            fill: var(--primary-text);
+        }
+        
+        /* Settings toggle switches */
+        .settings-section {
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 15px;
+        }
+        
+        .setting-item {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .setting-label {
+            flex-grow: 1;
+            font-size: 16px; /* Increased font size */
+        }
+        
+        .setting-help-text {
+            margin-top: 8px;
+            margin-left: 35px;
+            color: var(--secondary-text);
+            font-size: 14px; /* Slightly smaller font for help text */
+            line-height: 1.4;
+        }
+        
+        /* Toggle switch styling */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px; /* Increased size */
+            height: 28px; /* Increased size */
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--control-bg);
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px; /* Increased size */
+            width: 20px; /* Increased size */
+            left: 4px;
+            bottom: 4px;
+            background-color: var(--primary-text);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--accent-color);
+        }
+        
+        input:focus + .toggle-slider {
+            box-shadow: 0 0 1px var(--accent-color);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px); /* Increased translation */
         }
     </style>
 </head>
@@ -441,10 +538,13 @@
         <!-- Mouse interaction layer -->
         <div class="mouse-interaction-layer" id="mouse-interaction-layer"></div>
         
-        <!-- Top-left controls: Help and source buttons -->
+        <!-- Top-left controls: Settings gear and source buttons -->
         <div class="top-left-controls">
-            <div class="icon-button" id="help-button" title="Show controls guide">
-                <span>?</span>
+            <div class="icon-button" id="help-button" title="Settings and Controls">
+                <!-- Gear icon instead of question mark -->
+                <svg class="gear-icon" viewBox="0 0 24 24">
+                    <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                </svg>
             </div>
             <div class="icon-button" id="source-button" style="display: none;" title="Change video source">
                 <svg class="camera-icon" viewBox="0 0 24 24">
@@ -453,7 +553,7 @@
                 </svg>
             </div>
             
-            <!-- Help panel with all instructions -->
+            <!-- Help panel with controls and settings -->
             <div class="help-panel" id="help-panel">
                 <h3>PTZ Camera Controls</h3>
                 
@@ -474,6 +574,33 @@
                     <li><span class="key">-</span> Zoom out</li>
                     <li><span class="key">R</span> Reset camera position</li>
                 </ul>
+                
+                <!-- Settings section -->
+                <div class="settings-section">
+                    <h3>Settings</h3>
+                    
+                    <!-- Inverted Tilt Mode setting -->
+                    <div class="setting-item">
+                        <span class="setting-label">Inverted Tilt Mode</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="invert-tilt-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <!-- Axis Lock Mode setting -->
+                    <div class="setting-item">
+                        <span class="setting-label">Axis Lock Mode</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="axis-lock-toggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-help-text" id="axis-lock-help">
+                        Use LEFT-CLICK to modify PAN axis only.<br>
+                        Use RIGHT-CLICK to modify TILT axis only.
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -586,11 +713,17 @@
             // Flag to indicate if a command is currently being sent
             commandInProgress: false,
             // Timestamp of last command sent
-            lastCommandTime: 0
+            lastCommandTime: 0,
+            // Settings that can be toggled by user
+            invertTilt: false,
+            axisLockMode: true,
+            // Track which button is being used for axis lock mode
+            activeDragButton: null // 0 for left-click (pan), 2 for right-click (tilt)
         };
         
         // Mouse state variables
         let isLeftDragging = false;
+        let isRightDragging = false;
         // Currently editing value
         let currentlyEditing = null;
         
@@ -616,6 +749,11 @@
             const helpButton = document.getElementById('help-button');
             const helpPanel = document.getElementById('help-panel');
             
+            // Toggle elements for settings
+            const invertTiltToggle = document.getElementById('invert-tilt-toggle');
+            const axisLockToggle = document.getElementById('axis-lock-toggle');
+            const axisLockHelp = document.getElementById('axis-lock-help');
+            
             // Value display elements
             const panValueElement = document.getElementById('pan-value');
             const tiltValueElement = document.getElementById('tilt-value');
@@ -637,7 +775,7 @@
                     return false;
                 });
                 
-                // Touch events for interaction layer
+// Touch events for interaction layer
                 mouseInteractionLayer.addEventListener('touchstart', handleTouchStart);
                 document.addEventListener('touchmove', handleTouchMove);
                 document.addEventListener('touchend', handleTouchEnd);
@@ -649,7 +787,7 @@
                 // Mouse wheel for zoom
                 mouseInteractionLayer.addEventListener('wheel', handleMouseWheel);
                 
-                // Help button
+                // Help button (now settings button)
                 helpButton.addEventListener('click', toggleHelpPanel);
                 
                 // Source button (to show modal again)
@@ -707,6 +845,19 @@
                 // Keyboard controls
                 document.addEventListener('keydown', handleKeyDown);
                 document.addEventListener('keyup', handleKeyUp);
+                
+                // Settings toggle handlers
+                invertTiltToggle.addEventListener('change', function() {
+                    ptzState.invertTilt = this.checked;
+                });
+                
+                axisLockToggle.addEventListener('change', function() {
+                    ptzState.axisLockMode = this.checked;
+                    axisLockHelp.style.display = this.checked ? 'block' : 'none';
+                });
+                
+                // Initialize axis lock help visibility
+                axisLockHelp.style.display = ptzState.axisLockMode ? 'block' : 'none';
             }
             
             // Start editing a value
@@ -929,14 +1080,22 @@
                 ptzState.lastMouseX = e.clientX;
                 ptzState.lastMouseY = e.clientY;
                 
-                // Only use left mouse button for panning/tilting
+                // Check which button was pressed
                 if (e.button === 0) { // Left mouse button
                     isLeftDragging = true;
+                    if (ptzState.axisLockMode) {
+                        ptzState.activeDragButton = 0; // Left click = pan only
+                    }
+                } else if (e.button === 2) { // Right mouse button
+                    isRightDragging = true;
+                    if (ptzState.axisLockMode) {
+                        ptzState.activeDragButton = 2; // Right click = tilt only
+                    }
                 }
             }
             
             function handleMouseMove(e) {
-                if (!isLeftDragging) return;
+                if ((!isLeftDragging && !isRightDragging) || currentlyEditing) return;
                 
                 // Calculate the relative position in the viewport (0 to 1)
                 const viewportWidth = window.innerWidth;
@@ -955,8 +1114,30 @@
                 
                 // Apply smoothing/sensitivity reduction (adjust these values to change sensitivity)
                 const sensitivity = 0.05; // Lower = less sensitive
-                ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
-                ptzState.tilt = ptzState.tilt + (newTilt - ptzState.tilt) * sensitivity;
+                
+                // Check if we're in axis lock mode
+                if (ptzState.axisLockMode) {
+                    if (ptzState.activeDragButton === 0) { // Left-click = pan only
+                        ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
+                    } else if (ptzState.activeDragButton === 2) { // Right-click = tilt only
+                        // Apply tilt inversion if enabled
+                        if (ptzState.invertTilt) {
+                            ptzState.tilt = ptzState.tilt - (newTilt - ptzState.tilt) * sensitivity;
+                        } else {
+                            ptzState.tilt = ptzState.tilt + (newTilt - ptzState.tilt) * sensitivity;
+                        }
+                    }
+                } else {
+                    // Normal mode (both axes at once)
+                    ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
+                    
+                    // Apply tilt inversion if enabled
+                    if (ptzState.invertTilt) {
+                        ptzState.tilt = ptzState.tilt - (newTilt - ptzState.tilt) * sensitivity;
+                    } else {
+                        ptzState.tilt = ptzState.tilt + (newTilt - ptzState.tilt) * sensitivity;
+                    }
+                }
                 
                 // Ensure values stay within bounds
                 ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan));
@@ -972,6 +1153,13 @@
             function handleMouseUp(e) {
                 if (e.button === 0) {
                     isLeftDragging = false;
+                } else if (e.button === 2) {
+                    isRightDragging = false;
+                }
+                
+                // If no button is being pressed anymore
+                if (!isLeftDragging && !isRightDragging) {
+                    ptzState.activeDragButton = null;
                     // Send a final command to ensure the position is set
                     sendCameraCommand();
                 }
@@ -999,6 +1187,11 @@
                     isLeftDragging = true;
                     ptzState.lastMouseX = e.touches[0].clientX;
                     ptzState.lastMouseY = e.touches[0].clientY;
+                    
+                    // In axis lock mode, default to panning (can't right-click on touch)
+                    if (ptzState.axisLockMode) {
+                        ptzState.activeDragButton = 0; // Simulate left click = pan only
+                    }
                 } else if (e.touches.length === 2) {
                     // Two finger touch for zoom (pinch)
                     const touch1 = e.touches[0];
@@ -1030,8 +1223,23 @@
                     
                     // Apply smoothing/sensitivity reduction
                     const sensitivity = 0.05; // Lower = less sensitive
-                    ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
-                    ptzState.tilt = ptzState.tilt + (newTilt - ptzState.tilt) * sensitivity;
+                    
+                    // Check if we're in axis lock mode
+                    if (ptzState.axisLockMode) {
+                        if (ptzState.activeDragButton === 0) { // Default to pan on touch
+                            ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
+                        }
+                    } else {
+                        // Normal mode (both axes at once)
+                        ptzState.pan = ptzState.pan + (newPan - ptzState.pan) * sensitivity;
+                        
+                        // Apply tilt inversion if enabled
+                        if (ptzState.invertTilt) {
+                            ptzState.tilt = ptzState.tilt - (newTilt - ptzState.tilt) * sensitivity;
+                        } else {
+                            ptzState.tilt = ptzState.tilt + (newTilt - ptzState.tilt) * sensitivity;
+                        }
+                    }
                     
                     // Ensure values stay within bounds
                     ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan));
@@ -1062,6 +1270,7 @@
             function handleTouchEnd(e) {
                 if (isLeftDragging) {
                     isLeftDragging = false;
+                    ptzState.activeDragButton = null;
                     // Send a final command to ensure the position is set
                     sendCameraCommand();
                 }
@@ -1143,10 +1352,12 @@
                     panDelta += moveSpeed;
                 }
                 if (keysPressed['w']) {
-                    tiltDelta -= moveSpeed;
+                    // Apply tilt inversion if enabled
+                    tiltDelta = ptzState.invertTilt ? moveSpeed : -moveSpeed;
                 }
                 if (keysPressed['s']) {
-                    tiltDelta += moveSpeed;
+                    // Apply tilt inversion if enabled
+                    tiltDelta = ptzState.invertTilt ? -moveSpeed : moveSpeed;
                 }
                 
                 if (panDelta !== 0 || tiltDelta !== 0) {
