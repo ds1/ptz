@@ -85,21 +85,27 @@
         
         /* Custom cursors */
         .cursor-pan-only {
-            cursor: ew-resize; /* Horizontal resize cursor for pan-only mode */
+            cursor: ew-resize;
         }
         
         .cursor-tilt-only {
-            cursor: ns-resize; /* Vertical resize cursor for tilt-only mode */
+            cursor: ns-resize;
         }
         
         .cursor-zoom-in {
-            cursor: zoom-in; /* Zoom in cursor */
+            cursor: zoom-in;
         }
         
         .cursor-zoom-out {
-            cursor: zoom-out; /* Zoom out cursor */
+            cursor: zoom-out;
         }
         
+        /* Hotkey styling */
+        .hotkey {
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
         /* Control panels and overlays */
         .top-left-controls {
             position: absolute;
@@ -110,7 +116,7 @@
             gap: 15px;
             pointer-events: auto;
         }
-        
+
         .bottom-right-controls {
             position: absolute;
             bottom: 20px;
@@ -118,7 +124,7 @@
             z-index: 100;
             pointer-events: auto;
         }
-        
+
         /* Common control panel styling */
         .control-panel {
             background-color: var(--overlay-bg);
@@ -128,32 +134,39 @@
             transition: opacity 0.2s ease;
             z-index: 999;
         }
-        
+
         .control-panel:hover {
             opacity: 1;
         }
-        
+
         /* Unified camera control panel */
         .camera-controls {
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
-        
+
         .control-row {
             display: flex;
             align-items: center;
             gap: 10px;
+            position: relative;
+            height: 36px;
         }
-        
+
         .control-label {
             color: var(--secondary-text);
-            width: 40px;
+            width: 50px;
             text-align: right;
-            font-size: 1.1rem; 
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
         }
-        
+
         .control-value {
+            position: relative;
             background-color: var(--control-bg);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 4px;
@@ -161,51 +174,96 @@
             min-width: 60px;
             font-weight: bold;
             color: var(--accent-color);
-            text-align: center;
-            cursor: pointer;
+            cursor: ew-resize;
             pointer-events: auto;
             font-size: 1.1rem;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            line-height: 1;
         }
-        
+
+        /* Adjust the control value when steppers are visible */
+        .control-value.with-steppers {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-right: none;
+            padding-right: 12px;
+        }
+
         .control-value:hover {
             background-color: rgba(50, 50, 50, 0.7);
         }
-        
+
         .control-value.editing {
             background-color: var(--secondary-bg);
             color: var(--primary-text);
             outline: 2px solid var(--accent-color);
+            cursor: text;
         }
-        
-        .zoom-buttons {
+
+        /* Stepper buttons styling */
+        .value-steppers {
             display: flex;
-            gap: 6px;
-        }
-        
-        .zoom-button {
-            width: 36px; 
-            height: 36px; 
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: none;
+            width: 20px;
+            height: 100%;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
             background-color: var(--control-bg);
-            border-radius: 50%;
+        }
+
+        .value-stepper {
+            width: 100%;
+            height: 50%;
+            background-color: var(--control-bg);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--primary-text);
-            font-weight: bold;
-            font-size: 20px; 
             cursor: pointer;
+            font-size: 14px;
+            color: var(--primary-text);
             user-select: none;
-            pointer-events: auto;
         }
-        
-        .zoom-button:hover {
+
+        .value-stepper:hover {
             background-color: var(--accent-color);
+            color: #000;
         }
-        
-        /* Help and source buttons */
+
+        .value-stepper.up {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-top-right-radius: 4px;
+        }
+
+        .value-stepper.down {
+            border-bottom-right-radius: 4px;
+        }
+
+        /* Control row with value and steppers combined */
+        .control-input-container {
+            display: flex;
+            align-items: stretch;
+            height: 100%;
+        }
+
+        /* Help, mode, and source buttons */
+        .icon-text {
+            position: absolute;
+            bottom: -18px;
+            font-size: 12px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
         .icon-button {
+            position: relative;
             width: 46px;
-            height: 46px; 
+            height: 46px;
             background-color: var(--overlay-bg);
             border-radius: 50%;
             display: flex;
@@ -216,14 +274,15 @@
             transition: opacity 0.2s ease;
             z-index: 110;
             pointer-events: auto;
+            margin-bottom: 18px;
         }
-        
+
         .icon-button:hover {
             opacity: 1;
         }
-        
+
         .icon-button span {
-            font-size: 22px; 
+            font-size: 22px;
             font-weight: bold;
         }
         
@@ -235,12 +294,12 @@
             background-color: var(--overlay-bg);
             padding: 20px;
             border-radius: 8px;
-            font-size: 16px; 
+            font-size: 16px;
             line-height: 1.5;
             z-index: 100;
             display: none;
-            width: 350px; 
-            max-width: 90vw; /* Responsive for small screens */
+            width: 350px;
+            max-width: 90vw;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             pointer-events: auto;
         }
@@ -252,14 +311,14 @@
         .help-panel h3 {
             margin-bottom: 12px;
             color: var(--accent-color);
-            font-size: 18px; 
+            font-size: 18px;
         }
         
         .help-panel p {
             margin-bottom: 15px;
             line-height: 1.5;
             word-wrap: break-word;
-            font-size: 16px; 
+            font-size: 16px;
         }
         
         .help-panel ul {
@@ -272,7 +331,7 @@
             margin-bottom: 8px;
             display: flex;
             align-items: flex-start;
-            font-size: 16px; 
+            font-size: 16px;
         }
         
         .help-panel .key {
@@ -282,9 +341,36 @@
             border-radius: 4px;
             margin-right: 8px;
             font-family: monospace;
-            min-width: 24px; 
+            min-width: 24px;
             text-align: center;
             font-size: 16px;
+        }
+
+        .settings-panel {
+            position: absolute;
+            top: 70px;
+            left: 20px;
+            background-color: var(--overlay-bg);
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            line-height: 1.5;
+            z-index: 100;
+            display: none;
+            width: 350px;
+            max-width: 90vw;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            pointer-events: auto;
+        }
+
+        .settings-panel.visible {
+            display: block;
+        }
+
+        .settings-panel h3 {
+            margin-bottom: 12px;
+            color: var(--accent-color);
+            font-size: 18px;
         }
         
         /* Source selector modal */
@@ -319,7 +405,7 @@
         
         .modal-header h2 {
             color: var(--accent-color);
-            font-size: 22px; 
+            font-size: 22px;
         }
         
         .source-options {
@@ -338,7 +424,7 @@
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.2s;
-            font-size: 16px; 
+            font-size: 16px;
         }
         
         .source-option label:hover {
@@ -348,8 +434,8 @@
         .source-option input[type="radio"] {
             margin-right: 10px;
             cursor: pointer;
-            width: 18px; 
-            height: 18px; 
+            width: 18px;
+            height: 18px;
         }
         
         .modal-footer {
@@ -366,11 +452,11 @@
             font-weight: bold;
             cursor: pointer;
             transition: background-color 0.2s;
-            font-size: 16px; /* Increased font size */
+            font-size: 16px;
         }
         
         .modal-button:hover {
-            background-color: #ffa857; /* Lighter orange on hover */
+            background-color: #ffa857;
         }
         
         /* Custom dialog styling */
@@ -403,7 +489,7 @@
         
         .dialog-header h2 {
             color: var(--accent-color);
-            font-size: 22px; /* Increased font size */
+            font-size: 22px;
         }
         
         .form-group {
@@ -414,17 +500,17 @@
             display: block;
             margin-bottom: 5px;
             color: var(--primary-text);
-            font-size: 16px; /* Increased font size */
+            font-size: 16px;
         }
         
         .form-control {
             width: 100%;
-            padding: 12px; /* Increased padding */
+            padding: 12px;
             border-radius: 4px;
             background-color: var(--control-bg);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--primary-text);
-            font-size: 16px; /* Increased font size */
+            font-size: 16px;
         }
         
         .dialog-footer {
@@ -435,12 +521,12 @@
         }
         
         .dialog-button {
-            padding: 10px 22px; /* Increased padding */
+            padding: 10px 22px;
             border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
             border: none;
-            font-size: 16px; /* Increased font size */
+            font-size: 16px;
         }
         
         .button-cancel {
@@ -472,19 +558,26 @@
         
         /* Camera icon for source button */
         .camera-icon {
-            width: 24px; /* Increased size */
-            height: 24px; /* Increased size */
+            width: 24px;
+            height: 24px;
             fill: var(--primary-text);
         }
         
-        /* Gear icon for settings button */
+        /* Gear icon for modes button */
         .gear-icon {
-            width: 24px; /* Increased size */
-            height: 24px; /* Increased size */
+            width: 24px;
+            height: 24px;
             fill: var(--primary-text);
         }
         
-        /* Settings toggle switches */
+        /* Help (?) icon for the help button */
+        .help-icon {
+            width: 24px;
+            height: 24px;
+            fill: var(--primary-text);
+        }
+
+        /* Modes toggle switches */
         .settings-section {
             margin-top: 20px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -496,17 +589,21 @@
             display: flex;
             align-items: center;
         }
+
+        #axis-lock-setting {
+            margin-top: 30px;
+        }
         
         .setting-label {
             flex-grow: 1;
-            font-size: 16px; /* Increased font size */
+            font-size: 16px;
         }
         
         .setting-help-text {
             margin-top: 8px;
             margin-left: 35px;
             color: var(--secondary-text);
-            font-size: 14px; /* Slightly smaller font for help text */
+            font-size: 14px;
             line-height: 1.4;
         }
         
@@ -514,8 +611,8 @@
         .toggle-switch {
             position: relative;
             display: inline-block;
-            width: 52px; /* Increased size */
-            height: 28px; /* Increased size */
+            width: 52px;
+            height: 28px;
         }
         
         .toggle-switch input {
@@ -539,8 +636,8 @@
         .toggle-slider:before {
             position: absolute;
             content: "";
-            height: 20px; /* Increased size */
-            width: 20px; /* Increased size */
+            height: 20px; 
+            width: 20px;
             left: 4px;
             bottom: 4px;
             background-color: var(--primary-text);
@@ -557,7 +654,7 @@
         }
         
         input:checked + .toggle-slider:before {
-            transform: translateX(24px); /* Increased translation */
+            transform: translateX(24px);
         }
     </style>
 </head>
@@ -565,21 +662,29 @@
     <div class="video-container">
         <!-- Video stream elements -->
         <div class="video-stream">
-            <img src="/api/placeholder/1920/1080" alt="Live Camera Feed" id="placeholder-image">
             <video id="video-feed" autoplay muted></video>
         </div>
         
         <!-- Mouse interaction layer -->
         <div class="mouse-interaction-layer" id="mouse-interaction-layer"></div>
         
-        <!-- Top-left controls: Settings gear and source buttons -->
+        <!-- Top-left controls with help button and panel -->
         <div class="top-left-controls" style="margin-top: 16px;">
-            <div class="icon-button" id="help-button" title="Settings and Controls">
-                <!-- Gear icon instead of question mark -->
+            <div class="icon-button" id="help-button" title="Help">
+                <svg class="help-icon" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                    <path fill="currentColor" d="M12.01 6c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 .88-.72 1.59-1.6 1.87L11 16h2v-3.09c1.84-.48 3-2.14 3-3.91 0-2.21-1.79-4-4-4z"/>
+                    <circle fill="currentColor" cx="12" cy="18" r="1"/>
+                </svg>
+            </div>
+            
+            <!-- Modes button with gear icon -->
+            <div class="icon-button" id="settings-button" title="Modes">
                 <svg class="gear-icon" viewBox="0 0 24 24">
                     <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
                 </svg>
             </div>
+            
             <div class="icon-button" id="source-button" style="display: none;" title="Change video source">
                 <svg class="camera-icon" viewBox="0 0 24 24">
                     <path d="M9 3L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-3.17L15 3H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
@@ -587,7 +692,7 @@
                 </svg>
             </div>
             
-            <!-- Help panel with controls and settings -->
+            <!-- Help panel with controls -->
             <div class="help-panel" id="help-panel">
                 <h3>PTZ Camera Controls</h3>
                 
@@ -595,73 +700,100 @@
                 Left-click and drag anywhere to pan and tilt the camera.<br>
                 Use the scroll wheel to zoom in and out.</p>
                 
-                <p><strong>Direct Value Entry:</strong><br>
-                Click on any value (Pan, Tilt, Zoom) to type in an exact value.</p>
+                <p><strong>Direct Value Controls:</strong><br>
+                Click on any value (Pan, Tilt, Zoom) to type in an exact value.<br>
+                Click and drag left/right on a value to decrease/increase it.<br>
+                When editing a value, use <strong>up/down arrow keys</strong> to increment/decrement.<br>
+                Use the arrow buttons to increment/decrement values precisely.</p>
                 
                 <h3>Keyboard Shortcuts</h3>
                 <ul>
+                    <li><span class="key">H</span> Toggle Help panel</li>
+                    <li><span class="key">M</span> Toggle Mode panel</li>
+                    <li><span class="key">R</span> Reset camera position</li>
                     <li><span class="key">W</span> Tilt up</li>
                     <li><span class="key">A</span> Pan left</li>
                     <li><span class="key">S</span> Tilt down</li>
                     <li><span class="key">D</span> Pan right</li>
                     <li><span class="key">+</span> Zoom in</li>
                     <li><span class="key">-</span> Zoom out</li>
-                    <li><span class="key">R</span> Reset camera position</li>
+                    <li><span class="key">P</span> Edit Pan value</li>
+                    <li><span class="key">T</span> Edit Tilt value</li>
+                    <li><span class="key">Z</span> Edit Zoom value</li>
+                    <li><span class="key">↑</span> Increment selected value</li>
+                    <li><span class="key">↓</span> Decrement selected value</li>
                 </ul>
+            </div>
+            
+            <!-- Modes panel -->
+            <div class="settings-panel" id="settings-panel">
+                <h3>Modes</h3>
                 
-                <!-- Settings section -->
-                <div class="settings-section">
-                    <h3>Settings</h3>
-                    
-                    <!-- Inverted Tilt Mode setting -->
-                    <div class="setting-item">
-                        <span class="setting-label">Inverted Tilt Mode</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="invert-tilt-toggle">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-help-text" id="invert-tilt-help">
-                        Moving mouse up tilts camera up.<br>
-                        Moving mouse down tilts camera down.
-                    </div>
-                    
-                    <!-- Axis Lock Mode setting -->
-                    <div class="setting-item">
-                        <span class="setting-label">Axis Lock Mode</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="axis-lock-toggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-help-text" id="axis-lock-help">
-                        Use LEFT-CLICK to modify PAN axis only.<br>
-                        Use RIGHT-CLICK to modify TILT axis only.
-                    </div>
+                <!-- Inverted Tilt Mode setting -->
+                <div class="setting-item">
+                    <span class="setting-label">Inverted Tilt Mode</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="invert-tilt-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-help-text" id="invert-tilt-help">
+                    Moving mouse up tilts camera up.<br>
+                    Moving mouse down tilts camera down.
+                </div>
+                
+                <!-- Axis Lock Mode setting -->
+                <div class="setting-item" id="axis-lock-setting">
+                    <span class="setting-label">Axis Lock Mode</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="axis-lock-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-help-text" id="axis-lock-help">
+                    Use LEFT-CLICK to modify PAN axis only.<br>
+                    Use RIGHT-CLICK to modify TILT axis only.
                 </div>
             </div>
         </div>
-        
+
         <!-- Bottom-right controls: Unified camera control panel -->
         <div class="bottom-right-controls">
             <div class="control-panel">
                 <div class="camera-controls">
+                    <!-- Pan Control Row -->
                     <div class="control-row">
-                        <span class="control-label">Pan:</span>
-                        <span class="control-value" id="pan-value" data-value="0.0" tabindex="0">0.0°</span>
+                        <span class="control-label"><span class="hotkey">P</span>an:</span>
+                        <div class="control-input-container">
+                            <span class="control-value with-steppers" id="pan-value" data-value="0.0" data-increment="0.1" tabindex="0">0.0°</span>
+                            <div class="value-steppers">
+                                <div class="value-stepper up" data-action="increment" data-target="pan" title="Increase pan">▲</div>
+                                <div class="value-stepper down" data-action="decrement" data-target="pan" title="Decrease pan">▼</div>
+                            </div>
+                        </div>
                     </div>
-                    
+
+                    <!-- Tilt Control Row -->
                     <div class="control-row">
-                        <span class="control-label">Tilt:</span>
-                        <span class="control-value" id="tilt-value" data-value="0.0" tabindex="0">0.0°</span>
+                        <span class="control-label"><span class="hotkey">T</span>ilt:</span>
+                        <div class="control-input-container">
+                            <span class="control-value with-steppers" id="tilt-value" data-value="0.0" data-increment="0.1" tabindex="0">0.0°</span>
+                            <div class="value-steppers">
+                                <div class="value-stepper up" data-action="increment" data-target="tilt" title="Increase tilt">▲</div>
+                                <div class="value-stepper down" data-action="decrement" data-target="tilt" title="Decrease tilt">▼</div>
+                            </div>
+                        </div>
                     </div>
-                    
+
+                    <!-- Zoom Control Row -->
                     <div class="control-row">
-                        <span class="control-label">Zoom:</span>
-                        <span class="control-value" id="zoom-value" data-value="1.0" tabindex="0">1.0x</span>
-                        <div class="zoom-buttons">
-                            <div class="zoom-button" id="zoom-out" title="Zoom out">−</div>
-                            <div class="zoom-button" id="zoom-in" title="Zoom in">+</div>
+                        <span class="control-label"><span class="hotkey">Z</span>oom:</span>
+                        <div class="control-input-container">
+                            <span class="control-value with-steppers" id="zoom-value" data-value="1.0" data-increment="0.1" tabindex="0">1.0x</span>
+                            <div class="value-steppers">
+                                <div class="value-stepper up" data-action="increment" data-target="zoom" title="Increase zoom">▲</div>
+                                <div class="value-stepper down" data-action="decrement" data-target="zoom" title="Decrease zoom">▼</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -676,17 +808,11 @@
                 </div>
                 
                 <div class="source-options">
-                    <div class="source-option">
-                        <label>
-                            <input type="radio" name="video-source" value="placeholder" checked>
-                            Placeholder Image
-                        </label>
-                    </div>
-                    
+                                        
                     <div class="source-option">
                         <label>
                             <input type="radio" name="video-source" value="webcam">
-                            Webcam (if available)
+                            Webcam
                         </label>
                     </div>
                     
@@ -706,7 +832,7 @@
             </div>
         </div>
         
-        <!-- Camera credentials dialog template -->
+        <!-- Camera credentials dialog template (hidden by default) -->
         <div class="custom-dialog" id="camera-credentials-dialog" style="display: none;">
             <div class="dialog-content">
                 <div class="dialog-header">
@@ -716,12 +842,12 @@
                 <form id="credentials-form">
                     <div class="form-group">
                         <label for="camera-ip">Camera IP Address:</label>
-                        <input type="password" id="camera-ip" class="form-control" placeholder="e.g., 192.168.1.100" required>
+                        <input type="text" id="camera-ip" class="form-control" placeholder="e.g., 192.168.1.100" required>
                     </div>
                     
                     <div class="form-group">
                         <label for="camera-username">Username:</label>
-                        <input type="password" id="camera-username" class="form-control" required>
+                        <input type="text" id="camera-username" class="form-control" required>
                     </div>
                     
                     <div class="form-group">
@@ -744,7 +870,7 @@
         const ptzState = {
             pan: 0.0,      // Range: -180 to 180 degrees
             tilt: 0.0,     // Range: -90 to 90 degrees
-            zoom: 1.0,     // Range: 1.0 to 12.0
+            zoom: 1.0,     // Range: 1.0 to 32.0
             // Last mouse position for calculating deltas
             lastMouseX: 0,
             lastMouseY: 0,
@@ -767,6 +893,10 @@
         let isRightDragging = false;
         // Currently editing value
         let currentlyEditing = null;
+        // NEW: Track drag state for control values
+        let isDraggingValue = false;
+        let dragStartX = 0;
+        let activeDragElement = null;
         
         // Command throttling to avoid overwhelming the API
         const COMMAND_THROTTLE_MS = 50; // Send at most 1 command every 50ms
@@ -785,10 +915,10 @@
             const credentialsCancel = document.getElementById('credentials-cancel');
             const applySourceButton = document.getElementById('apply-source-button');
             const sourceButton = document.getElementById('source-button');
-            const zoomIn = document.getElementById('zoom-in');
-            const zoomOut = document.getElementById('zoom-out');
             const helpButton = document.getElementById('help-button');
             const helpPanel = document.getElementById('help-panel');
+            const settingsButton = document.getElementById('settings-button');
+            const settingsPanel = document.getElementById('settings-panel');
             
             // Toggle elements for settings
             const invertTiltToggle = document.getElementById('invert-tilt-toggle');
@@ -801,6 +931,9 @@
             const tiltValueElement = document.getElementById('tilt-value');
             const zoomValueElement = document.getElementById('zoom-value');
             const valueElements = [panValueElement, tiltValueElement, zoomValueElement];
+            
+            // Value steppers (up/down buttons)
+            const stepperButtons = document.querySelectorAll('.value-stepper');
             
             // Initialize controls and event listeners
             function initControls() {
@@ -821,16 +954,18 @@
                 mouseInteractionLayer.addEventListener('touchstart', handleTouchStart);
                 document.addEventListener('touchmove', handleTouchMove);
                 document.addEventListener('touchend', handleTouchEnd);
-                
-                // Zoom buttons
-                zoomIn.addEventListener('click', () => changeZoom(0.5));
-                zoomOut.addEventListener('click', () => changeZoom(-0.5));
-                
+                                
                 // Mouse wheel for zoom
                 mouseInteractionLayer.addEventListener('wheel', handleMouseWheel);
                 
-                // Help button (now settings button)
+                // Hotkey focus handler
+                document.addEventListener('keydown', handleHotkeyFocus);
+
+                // Help button
                 helpButton.addEventListener('click', toggleHelpPanel);
+
+                // Settings button
+                settingsButton.addEventListener('click', toggleSettingsPanel);
                 
                 // Source button (to show modal again)
                 sourceButton.addEventListener('click', () => {
@@ -870,16 +1005,27 @@
                     document.querySelector('input[value="placeholder"]').checked = true;
                 });
                 
+                // NEW: Add stepper button event listeners
+                stepperButtons.forEach(button => {
+                    button.addEventListener('click', handleStepperClick);
+                });
+                
                 // Make values directly editable
                 valueElements.forEach(element => {
-                    element.addEventListener('click', startEditing);
+                    element.addEventListener('click', handleValueClick);
+                    element.addEventListener('mousedown', handleValueMouseDown);
                     element.addEventListener('keydown', handleValueKeydown);
                     element.addEventListener('blur', stopEditing);
                 });
                 
+                // Document-level event listeners for drag value functionality
+                document.addEventListener('mousemove', handleValueDrag);
+                document.addEventListener('mouseup', stopValueDrag);
+                
                 // Click outside to stop editing
                 document.addEventListener('click', (e) => {
-                    if (currentlyEditing && !e.target.classList.contains('editing')) {
+                    if (currentlyEditing && !e.target.classList.contains('editing') && 
+                        !e.target.closest('.value-steppers')) {
                         stopEditing({ target: currentlyEditing });
                     }
                 });
@@ -918,6 +1064,150 @@
                 
                 // Initialize cursor
                 updateCursor();
+            }
+            
+            function toggleSettingsPanel() {
+                settingsPanel.classList.toggle('visible');
+                
+                // Close help panel if open
+                if (helpPanel.classList.contains('visible')) {
+                    helpPanel.classList.remove('visible');
+                }
+            }
+
+            // Handle keyboard shortcut handler for focusing on control fields
+            function handleHotkeyFocus(e) {
+                // Don't handle if already editing something
+                if (currentlyEditing) return;
+                
+                // Don't handle if inside an input field
+                if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
+                
+                const key = e.key.toLowerCase();
+                
+                // Handle hotkeys for focusing control fields
+                switch(key) {
+                    case 'p':
+                        e.preventDefault();
+                        startEditing({ target: document.getElementById('pan-value') });
+                        break;
+                    case 't':
+                        e.preventDefault();
+                        startEditing({ target: document.getElementById('tilt-value') });
+                        break;
+                    case 'z':
+                        e.preventDefault();
+                        startEditing({ target: document.getElementById('zoom-value') });
+                        break;
+                }
+            }
+
+            // Handle clicks on stepper buttons
+            function handleStepperClick(e) {
+                e.stopPropagation(); // Prevent bubbling to parent
+                
+                const action = e.target.getAttribute('data-action');
+                const targetType = e.target.getAttribute('data-target');
+                
+                // Get the corresponding value element
+                const valueElement = document.getElementById(`${targetType}-value`);
+                const increment = parseFloat(valueElement.getAttribute('data-increment') || '0.1');
+                
+                if (action === 'increment' || action === 'decrement') {
+                    const delta = action === 'increment' ? increment : -increment;
+                    
+                    // Apply to the appropriate value based on target type
+                    if (targetType === 'pan') {
+                        ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan + delta));
+                    } else if (targetType === 'tilt') {
+                        ptzState.tilt = Math.max(-90, Math.min(90, ptzState.tilt + delta));
+                    } else if (targetType === 'zoom') {
+                        ptzState.zoom = Math.max(1, Math.min(32, ptzState.zoom + delta));
+                    }
+                    
+                    // Update display and send command
+                    updatePTZDisplay();
+                    sendCameraCommand();
+                }
+            }
+            
+            // Handle mousedown on value for drag functionality
+            function handleValueMouseDown(e) {
+                // If clicking on a stepper button, let that handler take care of it
+                if (e.target.classList.contains('value-stepper')) {
+                    return;
+                }
+                
+                // If right-click or modifier key, let the default context menu appear
+                if (e.button !== 0 || e.ctrlKey || e.metaKey) {
+                    return;
+                }
+                
+                // Start dragging if not already editing
+                if (!currentlyEditing && e.target.classList.contains('control-value')) {
+                    isDraggingValue = true;
+                    dragStartX = e.clientX;
+                    activeDragElement = e.target;
+                    
+                    // Set the cursor explicitly
+                    document.documentElement.style.cursor = 'ew-resize';
+                    e.preventDefault(); // Prevent text selection
+                }
+            }
+            
+            // Handle value click (separate from mousedown for editing)
+            function handleValueClick(e) {
+                // Only start editing if we're not dragging
+                if (!isDraggingValue && e.target.classList.contains('control-value')) {
+                    startEditing(e);
+                }
+            }
+            
+            // Handle drag movement for values
+            function handleValueDrag(e) {
+                if (!isDraggingValue || !activeDragElement) {
+                    return;
+                }
+                
+                // Calculate the drag distance
+                const dragDistance = e.clientX - dragStartX;
+                
+                // If the drag just started, need some threshold to avoid accidental edits
+                if (Math.abs(dragDistance) < 3) {
+                    return;
+                }
+                
+                // Calculate the change amount - faster dragging = bigger changes
+                const dragSensitivity = 0.05;
+                const changeAmount = dragDistance * dragSensitivity;
+                
+                // Update dragStartX for the next move event
+                dragStartX = e.clientX;
+                
+                // Apply to the appropriate value based on element ID
+                if (activeDragElement.id === 'pan-value') {
+                    ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan + changeAmount));
+                } else if (activeDragElement.id === 'tilt-value') {
+                    ptzState.tilt = Math.max(-90, Math.min(90, ptzState.tilt + changeAmount));
+                } else if (activeDragElement.id === 'zoom-value') {
+                    ptzState.zoom = Math.max(1, Math.min(32, ptzState.zoom + changeAmount));
+                }
+                
+                // Update display and send command
+                updatePTZDisplay();
+                throttledSendCommand();
+            }
+            
+            // Stop dragging value
+            function stopValueDrag() {
+                if (isDraggingValue) {
+                    isDraggingValue = false;
+                    document.documentElement.style.cursor = 'default';
+                    activeDragElement = null;
+                    
+                    // Send a final command
+                    sendCameraCommand();
+                }
             }
             
             // Update help text for inverted tilt based on current setting
@@ -987,7 +1277,41 @@
             
             // Handle keydown on editable value
             function handleValueKeydown(e) {
-                if (e.key === 'Enter') {
+                // Check if we're handling an arrow key for a control value
+                if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && 
+                    e.target.classList.contains('control-value')) {
+                    
+                    e.preventDefault(); // Prevent default arrow key behavior (moving cursor)
+                    
+                    const fieldId = e.target.id;
+                    const increment = parseFloat(e.target.getAttribute('data-increment') || '0.1');
+                    const delta = e.key === 'ArrowUp' ? increment : -increment;
+                    
+                    // Apply to the appropriate value based on the field ID
+                    if (fieldId === 'pan-value') {
+                        ptzState.pan = Math.max(-180, Math.min(180, ptzState.pan + delta));
+                    } else if (fieldId === 'tilt-value') {
+                        ptzState.tilt = Math.max(-90, Math.min(90, ptzState.tilt + delta));
+                    } else if (fieldId === 'zoom-value') {
+                        ptzState.zoom = Math.max(1, Math.min(32, ptzState.zoom + delta));
+                    }
+                    
+                    // Update display and send command
+                    updatePTZDisplay();
+                    sendCameraCommand();
+                    
+                    // Keep the field in editing mode
+                    e.target.classList.add('editing');
+                    e.target.setAttribute('contentEditable', 'true');
+                    
+                    // Reselect all text after value change
+                    const range = document.createRange();
+                    range.selectNodeContents(e.target);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    
+                } else if (e.key === 'Enter') {
                     e.preventDefault();
                     stopEditing({ target: e.target });
                 } else if (e.key === 'Escape') {
@@ -1021,7 +1345,7 @@
                     } else if (element.id === 'tilt-value') {
                         ptzState.tilt = Math.max(-90, Math.min(90, numValue));
                     } else if (element.id === 'zoom-value') {
-                        ptzState.zoom = Math.max(1, Math.min(12, numValue));
+                        ptzState.zoom = Math.max(1, Math.min(32, numValue));
                     }
                     
                     // Update display and send command
@@ -1053,6 +1377,16 @@
                 
                 zoomValueElement.textContent = `${ptzState.zoom.toFixed(1)}x`;
                 zoomValueElement.setAttribute('data-value', ptzState.zoom.toFixed(1));
+                
+                // Make sure steppers are still present
+                ensureSteppersExist();
+            }
+            
+            // Ensure that steppers exist after updating text content
+            function ensureSteppersExist() {
+                valueElements.forEach(element => {
+                        element.classList.add('with-steppers');
+                });
             }
             
             // Toggle help panel
@@ -1062,16 +1396,10 @@
             
             // Change video source
             function changeVideoSource(sourceType) {
-                // Hide both video elements initially
-                placeholderImage.style.display = 'none';
+                // Hide video feed initially
                 videoFeed.style.display = 'none';
                 
                 switch (sourceType) {
-                    case 'placeholder':
-                        // Show the placeholder image
-                        placeholderImage.style.display = 'block';
-                        break;
-                        
                     case 'webcam':
                         // Try to access the webcam
                         navigator.mediaDevices.getUserMedia({ video: true })
@@ -1081,9 +1409,8 @@
                             })
                             .catch(err => {
                                 console.error('Error accessing webcam:', err);
-                                alert('Could not access webcam. Please check permissions or try another video source.');
-                                document.querySelector('input[value="placeholder"]').checked = true;
-                                placeholderImage.style.display = 'block';
+                                alert('Could not access webcam. Please check permissions and select a different video source.');
+                                sourceModal.style.display = 'flex'; // Show modal again to select a different option
                             });
                         break;
                         
@@ -1155,19 +1482,18 @@
                 
                 // Hide placeholder once frame is loaded
                 ptzFrame.onload = () => {
-                    placeholderImage.style.display = 'none';
+                    // Success case - do nothing special since placeholder is removed
                 };
                 
                 // Handle loading errors
                 ptzFrame.onerror = () => {
                     console.error('Error loading PTZ camera stream');
-                    alert('Could not connect to PTZ camera. Please check credentials or network connection.');
-                    document.querySelector('input[value="placeholder"]').checked = true;
-                    placeholderImage.style.display = 'block';
+                    alert('Could not connect to PTZ camera. Please check credentials or network connection and select a different source.');
+                    sourceModal.style.display = 'flex';
                     
                     // Clear potentially invalid credentials
-                    sessionStorage.removeItem('ptzCamera');
-                    sessionStorage.removeItem('ptzCameraAuth');
+                    sessionStorage.removeItem('axisCamera');
+                    sessionStorage.removeItem('axisCameraAuth');
                 };
             }
             
@@ -1337,7 +1663,6 @@
                     );
                 }
             }
-            
             function handleTouchMove(e) {
                 if (currentlyEditing) return; // Don't handle touch if editing
                 
@@ -1473,6 +1798,14 @@
                                 updateCursor();
                             }, 300);
                             break;
+                        case 'h':
+                            // Toggle help panel visibility
+                            toggleHelpPanel();
+                            break;
+                        case 'm':
+                            // Toggle mode panel visibility
+                            toggleSettingsPanel();
+                            break;
                     }
                     
                     // Start continuous movement for WASD keys
@@ -1526,7 +1859,7 @@
             
             // Change zoom by delta amount
             function changeZoom(delta) {
-                const maxZoom = 12.0;
+                const maxZoom = 32.0;
                 const minZoom = 1.0;
                 
                 // Apply zoom change
@@ -1584,24 +1917,23 @@
                         return;
                     }
                     
-                    // Construct the PTZ control URL (using compatible API path)
-                    const ptzUrl = `http://${credentials.cameraIp}/axis-cgi/com/ptz.cgi`;
+                    // Construct the PTZ control URL
+                    const ptzControlUrl = `http://${credentials.cameraIp}/axis-cgi/com/ptz.cgi`;
                     
                     // Create the parameters
                     const params = new URLSearchParams({
                         'camera': 1,
                         'pan': ptzState.pan,
                         'tilt': ptzState.tilt,
-                        'zoom': Math.floor(ptzState.zoom * 9999 / 12)  // Scale conversion
+                        'zoom': Math.floor(ptzState.zoom * 9999 / 32)  // Scale conversion
                     });
                     
                     // Create a temporary image to make an authenticated request
-                    // This is a common technique for making an authenticated request
                     // This is a common technique for making authenticated requests without CORS issues
                     const authImg = new Image();
                     
                     // Set authentication in the URL
-                    authImg.src = `${ptzUrl}?${params.toString()}&dummy=${Date.now()}`;
+                    authImg.src = `${ptzControlUrl}?${params.toString()}&dummy=${Date.now()}`;
                     
                     // Clean up the image after loading (or error)
                     authImg.onload = authImg.onerror = function() {
@@ -1615,7 +1947,7 @@
                     authImg.style.display = 'none';
                     document.body.appendChild(authImg);
                 } else {
-                    // For non-ptz sources, just apply visual feedback
+                    // For non-axis sources, just apply visual feedback
                     
                     // Apply visual feedback (now correctly applying both pan and tilt)
                     const translateX = -ptzState.pan / 2;
@@ -1635,14 +1967,14 @@
             // Store camera credentials
             function storePTZCredentials(cameraIp, username, password) {
                 // Store in sessionStorage (cleared when tab closes)
-                sessionStorage.setItem('ptzCamera', JSON.stringify({
+                sessionStorage.setItem('axisCamera', JSON.stringify({
                     cameraIp,
                     timestamp: Date.now() // Add timestamp for potential expiration
                 }));
                 
                 // Store credentials separately with limited lifetime
                 const encodedAuth = btoa(`${username}:${password}`);
-                sessionStorage.setItem('ptzCameraAuth', encodedAuth);
+                sessionStorage.setItem('axisCameraAuth', encodedAuth);
                 
                 return true;
             }
@@ -1650,8 +1982,8 @@
             // Function to get stored credentials
             function getPTZCredentials() {
                 try {
-                    const cameraData = JSON.parse(sessionStorage.getItem('ptzCamera') || '{}');
-                    const authToken = sessionStorage.getItem('ptzCameraAuth');
+                    const cameraData = JSON.parse(sessionStorage.getItem('axisCamera') || '{}');
+                    const authToken = sessionStorage.getItem('axisCameraAuth');
                     
                     if (!cameraData.cameraIp || !authToken) {
                         return null;
@@ -1661,8 +1993,8 @@
                     const now = Date.now();
                     if (now - cameraData.timestamp > 3600000) { // 1 hour expiration
                         // Clear expired credentials
-                        sessionStorage.removeItem('ptzCamera');
-                        sessionStorage.removeItem('ptzCameraAuth');
+                        sessionStorage.removeItem('axisCamera');
+                        sessionStorage.removeItem('axisCameraAuth');
                         return null;
                     }
                     
